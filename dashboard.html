@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name title="Signed in">Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <!-- ================= GREETING ================= -->
+        <section class="greet">
+            <div>
+                <h1 id="greetName">Hello 👋</h1>
+                <p id="greetDate"></p>
+            </div>
+
+            <div class="greet-ring" id="ringPct">0%</div>
+        </section>
+
+        <!-- Overdue warning -->
+        <div class="alert-bar" id="overdueAlert" style="display: none"></div>
+
+        <!-- ================= QUICK ADD ================= -->
+        <div class="quick-add">
+            <input class="input" type="text" id="quickTaskInput"
+                placeholder="Quick add a task for today…  (press Enter)">
+            <button class="primary-btn" id="quickAddBtn" type="button">Add task</button>
+        </div>
+
+        <!-- ================= STATS ================= -->
+        <section class="stat-grid" style="margin-bottom: 22px">
+
+            <div class="stat-card">
+                <div class="stat-icon warn">⏳</div>
+                <div>
+                    <strong id="statPending">0</strong>
+                    <span>Pending tasks</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon ok">✅</div>
+                <div>
+                    <strong id="statDone">0</strong>
+                    <span>Completed</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon info">⏱</div>
+                <div>
+                    <strong id="statFocus">0m</strong>
+                    <span>Focus today</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div>
+                    <strong id="statStreak">0d</strong>
+                    <span>Study streak</span>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= MAIN GRID ================= -->
+        <div class="dash-grid">
+
+            <!-- ---------- LEFT COLUMN ---------- -->
+            <div class="dash-col">
+
+                <!-- Overall progress -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 16px">
+                        <div>
+                            <div class="card-title">Task completion</div>
+                            <div class="card-sub">Across every subject</div>
+                        </div>
+                        <strong style="color: var(--brand); font-size: 20px" id="dashPct">0%</strong>
+                    </div>
+
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="dashBar"></div>
+                    </div>
+
+                    <div id="dashCounts" style="margin-top: 20px"></div>
+                </section>
+
+                <!-- Today tasks -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 6px">
+                        <div>
+                            <div class="card-title">Today's tasks</div>
+                            <div class="card-sub">Due today and overdue items</div>
+                        </div>
+                        <span class="pill pill-brand" id="todayCount"></span>
+                    </div>
+
+                    <div id="todayTasks"></div>
+                </section>
+
+                <!-- Study time chart -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 10px">
+                        <div>
+                            <div class="card-title">Focus time this week</div>
+                            <div class="card-sub">Minutes completed per day</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-box" id="weekChart"></div>
+                </section>
+
+                <!-- Heatmap -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 12px">
+                        <div>
+                            <div class="card-title">4 week activity</div>
+                            <div class="card-sub" id="focusGoalNote"></div>
+                        </div>
+                    </div>
+
+                    <div class="heat-grid" id="heatGrid"></div>
+
+                    <div class="legend">
+                        <div><i style="background: var(--surface-3)"></i> None</div>
+                        <div><i style="background: #c7d2fe"></i> Light</div>
+                        <div><i style="background: var(--brand)"></i> Goal met</div>
+                        <div><i style="background: var(--accent)"></i> Double</div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ---------- RIGHT COLUMN ---------- -->
+            <div class="dash-col">
+
+                <!-- Pomodoro -->
+                <section class="card pomo" id="pomoCard">
+
+                    <div class="row-between">
+                        <span class="badge" id="pomoModeLabel">Focus</span>
+                        <button class="icon-btn" id="pomoSettingsBtn" type="button" aria-label="Timer settings"
+                            title="Timer settings">⚙️</button>
+                    </div>
+
+                    <div class="pomo-ring" id="pomoRing">
+                        <div class="pomo-time" id="pomoTime">25:00</div>
+                    </div>
+
+                    <div class="pomo-task" id="pomoTaskLabel">No task selected</div>
+
+                    <div class="pomo-modes">
+                        <button type="button" data-mode="focus" class="active">Focus</button>
+                        <button type="button" data-mode="short">Short</button>
+                        <button type="button" data-mode="long">Long</button>
+                    </div>
+
+                    <div class="field" style="text-align: left; margin-bottom: 14px">
+                        <label for="pomoTaskSelect">Working on</label>
+                        <select class="select" id="pomoTaskSelect"></select>
+                    </div>
+
+                    <div class="pomo-controls">
+                        <button class="primary-btn btn-sm" id="pomoStart" type="button">▶ Start</button>
+                        <button class="secondary-btn btn-sm" id="pomoPause" type="button">⏸ Pause</button>
+                        <button class="ghost-btn btn-sm" id="pomoReset" type="button">↺ Reset</button>
+                        <button class="ghost-btn btn-sm" id="pomoSkip" type="button">⏭ Skip</button>
+                    </div>
+
+                    <div class="pomo-stats">
+                        <div>
+                            <strong id="pomoStatToday">0m</strong>
+                            <small>Today</small>
+                        </div>
+                        <div>
+                            <strong id="pomoStatSessions">0</strong>
+                            <small>Sessions</small>
+                        </div>
+                        <div>
+                            <strong id="pomoStatStreak">0d</strong>
+                            <small>Streak</small>
+                        </div>
+                        <div>
+                            <strong id="pomoRound">0</strong>
+                            <small>Round</small>
+                        </div>
+                    </div>
+
+                    <p class="hint" style="margin-top: 14px">Tip: press <kbd>Space</kbd> to start or pause.</p>
+                </section>
+
+                <!-- Goals snapshot -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 10px">
+                        <div>
+                            <div class="card-title">Goals in progress</div>
+                            <div class="card-sub">Nearest deadline first</div>
+                        </div>
+                    </div>
+
+                    <div id="goalSnapshot"></div>
+                </section>
+
+                <!-- Exams -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 12px">
+                        <div>
+                            <div class="card-title">Upcoming exams</div>
+                            <div class="card-sub">Countdown in days</div>
+                        </div>
+                    </div>
+
+                    <div class="row-wrap" id="examStrip"></div>
+                </section>
+
+                <!-- Donut -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 14px">
+                        <div>
+                            <div class="card-title">Task status</div>
+                            <div class="card-sub">Done vs pending vs late</div>
+                        </div>
+                    </div>
+
+                    <div class="donut-layout" id="taskDonut"></div>
+                </section>
+
+                <!-- Focus trend -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 12px">
+                        <div>
+                            <div class="card-title">Focus trend</div>
+                            <div class="card-sub" id="trendNote">Minutes studied per day</div>
+                        </div>
+
+                        <div class="chip-row" role="group" aria-label="Trend range">
+                            <button class="chip" type="button" data-trend="7">7d</button>
+                            <button class="chip active" type="button" data-trend="14">14d</button>
+                            <button class="chip" type="button" data-trend="30">30d</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-box" id="trendChart"></div>
+                </section>
+
+                <!-- Best hours -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 12px">
+                        <div>
+                            <div class="card-title">When you focus best</div>
+                            <div class="card-sub" id="bestHoursNote">Focus sessions by hour of day</div>
+                        </div>
+                    </div>
+
+                    <div class="hour-grid" id="hourChart"></div>
+
+                    <div class="legend">
+                        <div><i style="background: var(--surface-3)"></i> None</div>
+                        <div><i style="background: #c7d2fe"></i> Light</div>
+                        <div><i style="background: var(--brand)"></i> Solid</div>
+                        <div><i style="background: var(--accent)"></i> Peak</div>
+                    </div>
+                </section>
+
+                <!-- Subject split -->
+                <section class="card">
+                    <div class="row-between" style="margin-bottom: 12px">
+                        <div>
+                            <div class="card-title">Focus by subject</div>
+                            <div class="card-sub">Share of your logged study time</div>
+                        </div>
+                    </div>
+
+                    <div class="split-list" id="subjectSplit"></div>
+                </section>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ================= POMODORO SETTINGS MODAL ================= -->
+    <div class="modal" id="pomoSettingsModal" aria-hidden="true">
+        <div class="modal-content wide" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" aria-label="Close"
+                onclick="SS.ui.closeModal('pomoSettingsModal')">×</button>
+
+            <h2>Timer settings</h2>
+            <p>Customise your focus and break lengths.</p>
+
+            <form id="pomoSettingsForm" class="stack" onsubmit="return false">
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label for="setFocus">Focus length (min)</label>
+                        <input class="input" type="number" id="setFocus" min="5" max="120" value="25">
+                    </div>
+                    <div class="field">
+                        <label for="setShort">Short break (min)</label>
+                        <input class="input" type="number" id="setShort" min="1" max="30" value="5">
+                    </div>
+                    <div class="field">
+                        <label for="setLong">Long break (min)</label>
+                        <input class="input" type="number" id="setLong" min="5" max="60" value="15">
+                    </div>
+                    <div class="field">
+                        <label for="setEvery">Long break after</label>
+                        <input class="input" type="number" id="setEvery" min="2" max="8" value="4">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="setGoal">Daily focus goal (min)</label>
+                    <input class="input" type="number" id="setGoal" min="15" max="600" value="120">
+                    <span class="hint">Used for the dashboard progress ring and heatmap.</span>
+                </div>
+
+                <label class="row" style="cursor: pointer">
+                    <input type="checkbox" id="setSound" checked>
+                    <span>Play a sound when a session ends</span>
+                </label>
+
+                <label class="row" style="cursor: pointer">
+                    <input type="checkbox" id="setNotify">
+                    <span>Show desktop notifications</span>
+                </label>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 6px">
+                    <button class="ghost-btn btn-sm" type="button" id="pomoNotifyBtn">Enable notifications</button>
+                    <button class="primary-btn btn-sm" type="button"
+                        onclick="SS.pomodoro.saveSettings(); SS.ui.closeModal('pomoSettingsModal')">Save</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <div class="footer-links">
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+            <a href="settings.html">Settings</a>
+        </div>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/pomodoro.js"></script>
+    <script src="js/dashboard.js"></script>
+
+</body>
+
+</html>

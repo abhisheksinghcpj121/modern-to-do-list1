@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Smart Study helps students manage tasks, plan study sessions, take smart notes and track goals in one place.">
+
+    <title>Smart Study - Student Productivity</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="index.html" class="logo">
+            <span>📚</span> Smart Study
+        </a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html" class="active">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+
+            <a href="login.html" class="primary-btn btn-sm" id="navAuthBtn">Login</a>
+
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main>
+
+        <!-- ================= HERO ================= -->
+        <section class="hero">
+
+            <div class="hero-content">
+                <p class="badge">🎓 Smart Study. Better Results.</p>
+
+                <h1>
+                    Organize Your Study,
+                    <span>Achieve Your Goals.</span>
+                </h1>
+
+                <p class="hero-text">
+                    Smart Study helps students manage tasks, build study plans, take searchable notes,
+                    run focused Pomodoro sessions and track progress — all in one place.
+                </p>
+
+                <div class="hero-buttons">
+                    <a href="login.html" class="primary-btn">Get Started →</a>
+                    <a href="study-plan.html" class="secondary-btn">Create Study Plan</a>
+                </div>
+
+                <div class="hero-meta">
+                    <span>⚡ No signup needed</span>
+                    <span>🔒 Data stays on your device</span>
+                    <span>📴 Works offline</span>
+                </div>
+            </div>
+
+            <!-- Live dashboard preview -->
+            <div class="hero-card">
+                <div class="card-header">
+                    <div>
+                        <small>Today's Progress</small>
+                        <h2 id="heroPct">75%</h2>
+                    </div>
+
+                    <div class="progress-circle" id="heroCircle">✓</div>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="heroBar"></div>
+                </div>
+
+                <div class="mini-stats">
+                    <div>
+                        <strong id="heroTasks">12</strong>
+                        <span>Tasks</span>
+                    </div>
+                    <div>
+                        <strong id="heroDone">8</strong>
+                        <span>Completed</span>
+                    </div>
+                    <div>
+                        <strong id="heroFocus">4h</strong>
+                        <span>Study Time</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- ================= FEATURES ================= -->
+        <section class="section section-alt">
+
+            <div class="section-title">
+                <p class="badge">FEATURES</p>
+                <h2>
+                    Everything You Need to
+                    <span>Study Smarter</span>
+                </h2>
+                <p>Simple tools designed to help you stay organized and productive.</p>
+            </div>
+
+            <div class="features">
+
+                <div class="feature-card">
+                    <div class="feature-icon">✅</div>
+                    <h3>Task Manager</h3>
+                    <p>Priorities, subjects, due dates, overdue flags, search and smart grouping.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📅</div>
+                    <h3>Study Planner</h3>
+                    <p>A full weekly timetable with hour targets per subject and exam countdowns.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>Smart Notes</h3>
+                    <p>Autosaving editor with tags, colours, pinning and instant search.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Track Goals</h3>
+                    <p>Set goals with deadlines, nudge progress and watch streaks build up.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⏱</div>
+                    <h3>Pomodoro Focus</h3>
+                    <p>Focus and break cycles, custom durations, task linking and notifications.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics</h3>
+                    <p>Weekly focus charts, task status breakdown and a 4-week activity heatmap.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🌙</div>
+                    <h3>Dark Mode</h3>
+                    <p>Easy on the eyes during late night revision sessions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <h3>Backup &amp; Restore</h3>
+                    <p>Export your whole workspace to a file and bring it back any time.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= HOW IT WORKS ================= -->
+        <section class="section">
+
+            <div class="section-title">
+                <p class="badge">HOW IT WORKS</p>
+                <h2>Three steps to <span>better grades</span></h2>
+                <p>Set up your workspace in under two minutes.</p>
+            </div>
+
+            <div class="steps">
+
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Create your account</h3>
+                    <p>Sign up or jump straight in as a guest. Everything saves to this device automatically.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Plan the week</h3>
+                    <p>Add your subjects, block study time on the timetable and drop in exam dates.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Track and improve</h3>
+                    <p>Work through tasks in Pomodoro sessions and watch the charts show your progress.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CTA ================= -->
+        <section class="section" style="padding-top: 0">
+
+            <div class="cta-box">
+                <h2>Ready to focus?</h2>
+                <p>Join students who plan their week instead of guessing it.</p>
+                <a href="login.html" class="secondary-btn">Start for free — no card needed</a>
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+
+        <div class="footer-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+            <a href="settings.html">Settings</a>
+        </div>
+
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/landing.js"></script>
+
+</body>
+
+</html>

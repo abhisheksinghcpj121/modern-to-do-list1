@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <div class="auth-wrap">
+
+        <!-- Left panel -->
+        <aside class="auth-aside">
+            <a href="index.html" class="logo"><span>📚</span> Smart Study</a>
+
+            <h2>Welcome back to your study hub.</h2>
+            <p>Your tasks, notes, timetable and focus history are exactly where you left them.</p>
+
+            <ul class="auth-perks">
+                <li><span>✓</span> Tasks with priorities and due dates</li>
+                <li><span>✓</span> Weekly timetable and exam countdowns</li>
+                <li><span>✓</span> Pomodoro focus sessions</li>
+                <li><span>✓</span> Searchable notes with tags</li>
+                <li><span>✓</span> Charts that show real progress</li>
+            </ul>
+        </aside>
+
+        <!-- Right panel -->
+        <main class="auth-main">
+            <div class="auth-card">
+
+                <a href="index.html" class="logo"><span>📚</span> Smart Study</a>
+
+                <h1>Welcome back 👋</h1>
+                <p>Login to continue to your dashboard.</p>
+
+                <form id="loginForm" novalidate>
+
+                    <div class="field">
+                        <label for="email">Email address</label>
+                        <input class="input" type="email" id="email" placeholder="you@school.com"
+                            autocomplete="email" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <div class="pw-wrap">
+                            <input class="input" type="password" id="password" placeholder="Your password"
+                                autocomplete="current-password" required>
+                            <button type="button" class="pw-toggle" data-pw-toggle="password">SHOW</button>
+                        </div>
+                    </div>
+
+                    <p class="error-text" id="loginError"></p>
+
+                    <button type="submit" class="primary-btn btn-block">Login</button>
+                </form>
+
+                <div class="auth-divider">OR</div>
+
+                <button type="button" class="secondary-btn btn-block" id="guestBtn">
+                    Continue as Guest
+                </button>
+
+                <p class="auth-alt">
+                    New to Smart Study? <a href="signup.html">Create an account</a>
+                </p>
+
+                <p class="auth-alt">
+                    <a href="index.html">← Back to home</a>
+                </p>
+
+            </div>
+        </main>
+
+    </div>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/authpage.js"></script>
+
+</body>
+
+</html>

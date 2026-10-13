@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goals - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>Goals</h1>
+                <p>Big targets, broken into progress you can actually see.</p>
+            </div>
+
+            <div class="page-head-actions">
+                <button class="primary-btn btn-sm" id="addGoalBtn" type="button">+ New goal</button>
+            </div>
+        </div>
+
+        <div id="goalSummary"></div>
+
+        <section class="goal-grid" id="goalGrid"></section>
+
+    </main>
+
+
+    <!-- ================= GOAL MODAL ================= -->
+    <div class="modal" id="goalModal" aria-hidden="true">
+        <div class="modal-content wide" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" id="goalCancelBtn" aria-label="Close">×</button>
+
+            <h2 id="goalModalTitle">New goal</h2>
+            <p>Give it a clear finish line, then nudge the percentage as you go.</p>
+
+            <form id="goalForm" novalidate>
+
+                <div class="field">
+                    <label for="fGoalTitle">Goal *</label>
+                    <input class="input" type="text" id="fGoalTitle" placeholder="e.g. Score above 85% in Physics">
+                </div>
+
+                <div class="grid-2">
+
+                    <div class="field">
+                        <label for="fCategory">Category</label>
+                        <select class="select" id="fCategory"></select>
+                    </div>
+
+                    <div class="field">
+                        <label for="fDeadline">Target date</label>
+                        <input class="input" type="date" id="fDeadline">
+                    </div>
+
+                </div>
+
+                <div class="field">
+                    <label for="fProgress">Current progress — <span id="goalProgressLabel">0%</span></label>
+                    <input type="range" id="fProgress" min="0" max="100" step="5" value="0"
+                        style="width: 100%; accent-color: var(--brand)">
+                </div>
+
+                <p class="error-text" id="goalFormError"></p>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 4px">
+                    <button class="ghost-btn btn-sm" type="button"
+                        onclick="SS.ui.closeModal('goalModal')">Cancel</button>
+                    <button class="primary-btn btn-sm" type="submit">Save goal</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/goals.js"></script>
+
+</body>
+
+</html>

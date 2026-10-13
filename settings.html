@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>Settings</h1>
+                <p>Manage your profile, focus defaults and stored data.</p>
+            </div>
+        </div>
+
+        <div class="stack">
+
+            <!-- ================= PROFILE ================= -->
+            <section class="card">
+                <div class="card-title">Profile</div>
+                <div class="card-sub" id="profileMeta" style="margin-bottom: 18px"></div>
+
+                <div class="row-between" style="margin-bottom: 20px; flex-wrap: wrap; gap: 14px">
+                    <div>
+                        <strong id="profileName" style="font-size: 17px">Student</strong>
+                        <div class="text-sm text-muted" id="profileEmail"></div>
+                    </div>
+
+                    <button class="danger-btn btn-sm" data-logout type="button">Log out</button>
+                </div>
+
+                <form id="profileForm" class="row" style="align-items: flex-end; gap: 12px">
+                    <div class="field" style="flex: 1">
+                        <label for="profileNameInput">Display name</label>
+                        <input class="input" type="text" id="profileNameInput" placeholder="Your name">
+                    </div>
+                    <button class="secondary-btn" type="submit">Update name</button>
+                </form>
+            </section>
+
+            <!-- ================= PASSWORD ================= -->
+            <section class="card">
+                <div class="card-title">Change password</div>
+                <div class="card-sub" style="margin-bottom: 18px">Only available for registered accounts.</div>
+
+                <form id="passwordForm" class="stack">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="oldPassword">Current password</label>
+                            <input class="input" type="password" id="oldPassword"
+                                autocomplete="current-password">
+                        </div>
+
+                        <div class="field">
+                            <label for="newPassword">New password</label>
+                            <input class="input" type="password" id="newPassword"
+                                autocomplete="new-password">
+                            <div class="pw-meter" id="pwMeter">
+                                <div id="pwFill"></div>
+                            </div>
+                            <span class="hint" id="pwLabel">Use a mix of letters, numbers and symbols.</span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="confirmPassword">Confirm new password</label>
+                        <input class="input" type="password" id="confirmPassword"
+                            autocomplete="new-password">
+                    </div>
+
+                    <div class="row" style="justify-content: flex-end">
+                        <button class="secondary-btn" type="submit">Update password</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ================= FOCUS DEFAULTS ================= -->
+            <section class="card">
+                <div class="card-title">Focus timer defaults</div>
+                <div class="card-sub" style="margin-bottom: 18px">
+                    Used by the Pomodoro widget on your dashboard.
+                </div>
+
+                <form id="focusForm" class="stack">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="setFocus">Focus length (minutes)</label>
+                            <input class="input" type="number" id="setFocus" min="5" max="120" value="25">
+                        </div>
+                        <div class="field">
+                            <label for="setShort">Short break (minutes)</label>
+                            <input class="input" type="number" id="setShort" min="1" max="30" value="5">
+                        </div>
+                        <div class="field">
+                            <label for="setLong">Long break (minutes)</label>
+                            <input class="input" type="number" id="setLong" min="5" max="60" value="15">
+                        </div>
+                        <div class="field">
+                            <label for="setEvery">Long break after every</label>
+                            <input class="input" type="number" id="setEvery" min="2" max="8" value="4">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="setGoal">Daily focus goal (minutes)</label>
+                        <input class="input" type="number" id="setGoal" min="15" max="600" value="120">
+                        <span class="hint">Drives the dashboard ring and the activity heatmap.</span>
+                    </div>
+
+                    <label class="row" style="cursor: pointer">
+                        <input type="checkbox" id="setSound" checked>
+                        <span>Play a sound when a session ends</span>
+                    </label>
+
+                    <label class="row" style="cursor: pointer">
+                        <input type="checkbox" id="setNotify">
+                        <span>Show desktop notifications</span>
+                    </label>
+
+                    <div class="row" style="justify-content: flex-end">
+                        <button class="primary-btn" type="submit">Save focus settings</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ================= APPEARANCE ================= -->
+            <section class="card">
+                <div class="card-title">Appearance</div>
+                <div class="card-sub" style="margin-bottom: 18px">Choose a theme, or use the moon button in the
+                    navbar.</div>
+
+                <div class="row-wrap">
+                    <label class="chip" style="cursor: pointer">
+                        <input type="radio" name="theme" value="light" data-theme-option="light" style="accent-color: var(--brand)">
+                        ☀️ Light
+                    </label>
+
+                    <label class="chip" style="cursor: pointer">
+                        <input type="radio" name="theme" value="dark" data-theme-option="dark" style="accent-color: var(--brand)">
+                        🌙 Dark
+                    </label>
+                </div>
+            </section>
+
+            <!-- ================= AI ASSISTANT ================= -->
+            <section class="card" id="aiCard">
+                <div class="card-title">AI Assistant</div>
+                <div class="card-sub" style="margin-bottom: 18px">
+                    Get AI answers grounded in your notes. The <strong>Free</strong> option works instantly with no
+                    key, but it is a public shared server — your notes go to a third party. Add your own key to keep
+                    everything on your provider. Keys are stored only in this browser, sent only to the provider you
+                    pick, and never included in backups.
+                </div>
+
+                <form id="aiForm" class="stack">
+                    <div class="grid-2">
+                        <div class="field">
+                            <label for="aiProvider">Provider</label>
+                            <select class="select" id="aiProvider"></select>
+                            <span class="hint" id="aiProviderNote"></span>
+                        </div>
+
+                        <div class="field">
+                            <label for="aiModel">Model</label>
+                            <input class="input" type="text" id="aiModel" placeholder="Leave blank for the default"
+                                list="aiModelList" autocomplete="off">
+                            <datalist id="aiModelList"></datalist>
+                        </div>
+                    </div>
+
+                    <div class="field" id="aiBaseField">
+                        <label for="aiBase">API base URL</label>
+                        <input class="input" type="text" id="aiBase" placeholder="https://api.openai.com/v1"
+                            autocomplete="off">
+                        <span class="hint" id="aiBaseHint">Change this for Groq, OpenRouter, Ollama and other
+                            OpenAI-compatible services.</span>
+                    </div>
+
+                    <div class="field" id="aiKeyField">
+                        <label for="aiKey">API key</label>
+                        <input class="input" type="password" id="aiKey" autocomplete="off"
+                            placeholder="Paste your key here">
+                        <span class="hint" id="aiKeyState"></span>
+                    </div>
+
+                    <div class="row-wrap" style="justify-content: flex-end">
+                        <button class="secondary-btn btn-sm" id="aiTestBtn" type="button">Test connection</button>
+                        <button class="danger-btn btn-sm" id="aiRemoveBtn" type="button">Remove key</button>
+                        <button class="primary-btn" type="submit">Save AI settings</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- ================= DATA ================= -->
+            <section class="card">
+                <div class="card-title">Your data</div>
+                <div class="card-sub" style="margin-bottom: 18px">
+                    Smart Study keeps everything in this browser. Export a backup before switching device.
+                </div>
+
+                <div class="row-wrap">
+                    <button class="secondary-btn btn-sm" id="exportBtn" type="button">⬇ Export backup</button>
+
+                    <label class="primary-btn btn-sm" style="cursor: pointer; margin: 0">
+                        ⬆ Restore backup
+                        <input type="file" id="importInput" accept="application/json" class="sr-only">
+                    </label>
+
+                    <button class="danger-btn btn-sm" id="wipeBtn" type="button">Erase all data</button>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/settings.js"></script>
+
+</body>
+
+</html>

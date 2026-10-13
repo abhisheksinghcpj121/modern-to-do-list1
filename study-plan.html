@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Plan - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>Study Plan</h1>
+                <p>Block your week, set hour targets per subject and count down to each exam.</p>
+            </div>
+
+            <div class="page-head-actions">
+                <button class="ghost-btn btn-sm" id="clearPlanBtn" type="button">Clear week</button>
+                <button class="secondary-btn btn-sm" id="addExamBtn" type="button">+ Exam</button>
+                <button class="secondary-btn btn-sm" id="addSubjectBtn" type="button">+ Subject</button>
+                <button class="primary-btn btn-sm" id="addSessionBtn" type="button">+ Session</button>
+            </div>
+        </div>
+
+        <!-- ================= PLAN STATS ================= -->
+        <section class="stat-grid" id="planStats" style="margin-bottom: 24px"></section>
+
+        <!-- ================= WEEKLY GRID ================= -->
+        <section class="card" style="margin-bottom: 22px">
+            <div class="row-between" style="margin-bottom: 16px">
+                <div>
+                    <div class="card-title">Weekly timetable</div>
+                    <div class="card-sub">Click a session to edit it. Hover a column to add a new slot.</div>
+                </div>
+                <span class="badge">This week</span>
+            </div>
+
+            <div class="plan-grid" id="planGrid"></div>
+        </section>
+
+        <div class="grid-2" style="align-items: start">
+
+            <!-- ================= SUBJECT TARGETS ================= -->
+            <section class="card">
+                <div class="row-between" style="margin-bottom: 16px">
+                    <div>
+                        <div class="card-title">Subject hour targets</div>
+                        <div class="card-sub">Planned hours against your weekly goal</div>
+                    </div>
+                    <button class="icon-btn" id="manageSubjectsBtn" type="button" aria-label="Manage subjects"
+                        title="Manage subjects">⋯</button>
+                </div>
+
+                <div class="subject-list" id="subjectList"></div>
+            </section>
+
+            <!-- ================= EXAMS ================= -->
+            <section class="card">
+                <div class="row-between" style="margin-bottom: 10px">
+                    <div>
+                        <div class="card-title">Exam countdowns</div>
+                        <div class="card-sub">Days remaining, nearest first</div>
+                    </div>
+                </div>
+
+                <div id="examList"></div>
+            </section>
+
+        </div>
+
+    </main>
+
+
+    <!-- ================= SESSION MODAL ================= -->
+    <div class="modal" id="sessionModal" aria-hidden="true">
+        <div class="modal-content wide" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" id="sessionCancelBtn" aria-label="Close">×</button>
+
+            <h2 id="sessionModalTitle">New study session</h2>
+            <p>Pick a day, a start time and how long you want to study.</p>
+
+            <form id="sessionForm" novalidate>
+
+                <div class="grid-2">
+
+                    <div class="field">
+                        <label for="pDay">Day</label>
+                        <select class="select" id="pDay">
+                            <option value="1">Monday</option>
+                            <option value="2">Tuesday</option>
+                            <option value="3">Wednesday</option>
+                            <option value="4">Thursday</option>
+                            <option value="5">Friday</option>
+                            <option value="6">Saturday</option>
+                            <option value="0">Sunday</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="pStart">Start time</label>
+                        <input class="input" type="time" id="pStart" value="16:00">
+                    </div>
+
+                </div>
+
+                <div class="grid-2">
+
+                    <div class="field">
+                        <label for="pSubject">Subject</label>
+                        <select class="select" id="pSubject"></select>
+                    </div>
+
+                    <div class="field">
+                        <label for="pMinutes">Duration (minutes)</label>
+                        <input class="input" type="number" id="pMinutes" min="10" max="480" step="15" value="60">
+                    </div>
+
+                </div>
+
+                <div class="field">
+                    <label for="pTopic">What will you study? *</label>
+                    <input class="input" type="text" id="pTopic" placeholder="e.g. Integration by parts">
+                </div>
+
+                <p class="error-text" id="sessionFormError"></p>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 4px">
+                    <button class="ghost-btn btn-sm" type="button"
+                        onclick="SS.ui.closeModal('sessionModal')">Cancel</button>
+                    <button class="primary-btn btn-sm" type="submit">Save session</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= SUBJECT MODAL ================= -->
+    <div class="modal" id="subjectModal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" id="subjectCancelBtn" aria-label="Close">×</button>
+
+            <h2 id="subjectModalTitle">New subject</h2>
+            <p>Set how many hours a week you want to give this subject.</p>
+
+            <form id="subjectForm" novalidate>
+
+                <div class="field">
+                    <label for="sName">Subject name *</label>
+                    <input class="input" type="text" id="sName" placeholder="e.g. Biology">
+                </div>
+
+                <div class="field">
+                    <label for="sTarget">Weekly target (hours)</label>
+                    <input class="input" type="number" id="sTarget" min="1" max="60" value="5">
+                </div>
+
+                <p class="error-text" id="subjectFormError"></p>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 4px">
+                    <button class="ghost-btn btn-sm" type="button"
+                        onclick="SS.ui.closeModal('subjectModal')">Cancel</button>
+                    <button class="primary-btn btn-sm" type="submit">Save subject</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= EXAM MODAL ================= -->
+    <div class="modal" id="examModal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" onclick="SS.ui.closeModal('examModal')"
+                aria-label="Close">×</button>
+
+            <h2 id="examModalTitle">New exam</h2>
+            <p>Smart Study will count down to this date for you.</p>
+
+            <form id="examForm" novalidate>
+
+                <div class="field">
+                    <label for="eTitle">Exam name *</label>
+                    <input class="input" type="text" id="eTitle" placeholder="e.g. Biology mid-term">
+                </div>
+
+                <div class="field">
+                    <label for="eDate">Date *</label>
+                    <input class="input" type="date" id="eDate">
+                </div>
+
+                <div class="field">
+                    <label for="eVenue">Venue (optional)</label>
+                    <input class="input" type="text" id="eVenue" placeholder="e.g. Room 104">
+                </div>
+
+                <p class="error-text" id="examFormError"></p>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 4px">
+                    <button class="ghost-btn btn-sm" type="button"
+                        onclick="SS.ui.closeModal('examModal')">Cancel</button>
+                    <button class="primary-btn btn-sm" type="submit">Save exam</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/studyplan.js"></script>
+
+</body>
+
+</html>

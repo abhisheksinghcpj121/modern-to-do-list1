@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Ask study doubts and get answers grounded in your own Smart Study notes, or use offline flashcards and summaries.">
+    <title>Assistant - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>Study Assistant</h1>
+                <p id="aiSubtitle">Ask a doubt and get an answer grounded in your own notes.</p>
+            </div>
+
+            <div class="page-head-actions">
+                <span class="pill" id="aiModeBadge" data-mode="study">Study mode</span>
+                <button class="secondary-btn btn-sm" id="aiClearChatBtn" type="button">Clear chat</button>
+            </div>
+        </div>
+
+        <!-- ================= KEY BANNER ================= -->
+        <div class="ai-banner" id="aiBanner" hidden>
+            <span class="ai-banner-icon" aria-hidden="true">🔑</span>
+            <div class="ai-banner-body">
+                <strong id="aiBannerTitle">Study mode</strong>
+                <p id="aiBannerText" class="text-sm"></p>
+            </div>
+            <a href="settings.html" class="primary-btn btn-sm" id="aiBannerAction">Add API key</a>
+        </div>
+
+        <!-- ================= QUICK ACTIONS ================= -->
+        <div class="ai-quick" id="aiQuick" role="group" aria-label="Quick actions"></div>
+
+        <!-- ================= THREAD ================= -->
+        <section class="ai-shell">
+            <div class="ai-thread" id="aiThread" aria-live="polite" aria-label="Conversation"></div>
+
+            <form class="ai-composer" id="aiForm">
+                <label class="sr-only" for="aiInput">Ask a study question</label>
+                <textarea class="textarea" id="aiInput" rows="2"
+                    placeholder="Ask a doubt… e.g. &quot;Explain integration by parts with an example&quot;"></textarea>
+
+                <div class="ai-composer-foot">
+                    <span class="hint" id="aiHint"></span>
+                    <button class="primary-btn" type="submit" id="aiSendBtn">Send</button>
+                </div>
+            </form>
+        </section>
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/assistant.js"></script>
+
+</body>
+
+</html>

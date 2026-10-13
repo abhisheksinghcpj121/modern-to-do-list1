@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Smart Study</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>Tasks</h1>
+                <p>Everything you need to finish, grouped by when it is due.</p>
+            </div>
+
+            <div class="page-head-actions">
+                <button class="secondary-btn btn-sm" id="clearDoneBtn" type="button">Clear completed</button>
+                <button class="primary-btn btn-sm" id="addTaskBtn" type="button">+ New task</button>
+            </div>
+        </div>
+
+        <!-- ================= STATS ================= -->
+        <section class="stat-grid" style="margin-bottom: 20px">
+
+            <div class="stat-card">
+                <div class="stat-icon info">📋</div>
+                <div>
+                    <strong id="statTotal">0</strong>
+                    <span>All tasks</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon warn">⏳</div>
+                <div>
+                    <strong id="statPending">0</strong>
+                    <span>Pending</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon ok">✅</div>
+                <div>
+                    <strong id="statDone">0</strong>
+                    <span>Completed</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background: var(--danger-soft)">⚠️</div>
+                <div>
+                    <strong id="statLate">0</strong>
+                    <span>Overdue</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= OVERALL PROGRESS ================= -->
+        <section class="card" style="margin-bottom: 20px">
+            <div class="row-between" style="margin-bottom: 14px">
+                <div>
+                    <div class="card-title">Overall completion</div>
+                    <div class="card-sub">How much of your task list is done</div>
+                </div>
+                <strong style="color: var(--brand); font-size: 22px" id="overallPct">0%</strong>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="overallBar"></div>
+            </div>
+        </section>
+
+        <!-- ================= TOOLBAR ================= -->
+        <div class="toolbar">
+            <div class="search-box">
+                <input class="input" type="search" id="taskSearch" placeholder="Search title, subject or note…">
+            </div>
+
+            <div class="filter-row" id="filterRow" role="group" aria-label="Filter tasks by status"></div>
+        </div>
+
+        <div class="toolbar" style="justify-content: space-between">
+            <div class="filter-row" id="subjectFilter" role="group" aria-label="Filter by subject"></div>
+            <div class="filter-row" id="sortRow" role="group" aria-label="Sort tasks"></div>
+        </div>
+
+        <!-- ================= LIST ================= -->
+        <div class="row-between" style="margin-bottom: 10px">
+            <span class="text-sm text-muted" id="taskCount">0 tasks</span>
+        </div>
+
+        <section class="task-list" id="taskList" aria-live="polite"></section>
+
+    </main>
+
+
+    <!-- ================= TASK MODAL ================= -->
+    <div class="modal" id="taskModal" aria-hidden="true">
+        <div class="modal-content wide" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" id="taskCancelBtn" aria-label="Close">×</button>
+
+            <h2 id="taskModalTitle">New task</h2>
+            <p>Fill in the details so the app can sort and remind you.</p>
+
+            <form id="taskForm" novalidate>
+
+                <div class="field">
+                    <label for="fTitle">Task title *</label>
+                    <input class="input" type="text" id="fTitle" placeholder="e.g. Solve calculus exercise 4.2">
+                </div>
+
+                <div class="grid-2">
+
+                    <div class="field">
+                        <label for="fSubject">Subject</label>
+                        <select class="select" id="fSubject"></select>
+                    </div>
+
+                    <div class="field">
+                        <label for="fPriority">Priority</label>
+                        <select class="select" id="fPriority">
+                            <option value="high">High</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="low">Low</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="field">
+                    <label for="fDate">Due date</label>
+                    <input class="input" type="date" id="fDate">
+                    <span class="hint">Leave empty if the task has no deadline.</span>
+                </div>
+
+                <div class="field">
+                    <label for="fRepeat">Repeat</label>
+                    <select class="select" id="fRepeat">
+                        <option value="none" selected>Does not repeat</option>
+                        <option value="daily">Every day</option>
+                        <option value="weekdays">Every weekday (Mon–Fri)</option>
+                        <option value="weekly">Every week</option>
+                    </select>
+                    <span class="hint" id="fRepeatHint">A repeating task schedules its next copy when you finish this one.</span>
+                </div>
+
+                <div class="field">
+                    <label for="fNotes">Notes (optional)</label>
+                    <textarea class="textarea" id="fNotes" placeholder="Chapter, page number, resources…"></textarea>
+                </div>
+
+                <p class="error-text" id="taskFormError"></p>
+
+                <div class="row" style="justify-content: flex-end; margin-top: 4px">
+                    <button class="ghost-btn btn-sm" type="button"
+                        onclick="SS.ui.closeModal('taskModal')">Cancel</button>
+                    <button class="primary-btn btn-sm" type="submit">Save task</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/tasks.js"></script>
+
+</body>
+
+</html>
