@@ -329,7 +329,8 @@
             { label: "💬 Ask a doubt", hint: "Focus the box below", run: focusInput },
             { label: "🃏 Make flashcards", hint: "From your notes", run: function () { runFlashcards(null); } },
             { label: "📅 What should I study today?", hint: "Your day at a glance", run: runToday },
-            { label: "✂️ Summarise a note", hint: "Best matching note", run: runSummarize }
+            { label: "✂️ Summarise a note", hint: "Best matching note", run: runSummarize },
+            { label: "🧠 Quiz me", hint: "Generate practice questions", run: function () { global.location.href = "quiz.html"; } }
         ].forEach(function (action) {
 
             nodes.quick.appendChild(

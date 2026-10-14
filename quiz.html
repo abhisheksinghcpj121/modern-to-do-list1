@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Generate subject-wise and chapter-wise practice quizzes with AI, or build multiple-choice questions offline from your own Smart Study notes.">
+    <title>AI Quiz - Smart Study</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="navbar">
+        <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
+
+        <nav id="primaryNav" aria-label="Main navigation">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Dashboard</a>
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+            <a href="quiz.html">Quiz</a>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
+            <span class="chip" data-user-name>Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
+                aria-expanded="false">☰</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <div class="page-head">
+            <div>
+                <h1>AI Quiz Generator</h1>
+                <p id="quizSubtitle">Turn any subject and chapter into a practice quiz.</p>
+            </div>
+
+            <div class="page-head-actions">
+                <span class="pill" id="quizModeBadge">Free mode</span>
+                <button class="secondary-btn btn-sm" id="quizNewBtn" type="button">New quiz</button>
+            </div>
+        </div>
+
+
+        <!-- ================= KEY / MODE BANNER ================= -->
+        <div class="ai-banner" id="quizBanner" hidden>
+            <span class="ai-banner-icon" aria-hidden="true">🔑</span>
+            <div class="ai-banner-body">
+                <strong id="quizBannerTitle">Free mode</strong>
+                <p id="quizBannerText">Questions come from a free shared server.</p>
+            </div>
+            <a href="settings.html" class="primary-btn btn-sm" id="quizBannerAction">Add API key</a>
+        </div>
+
+
+        <!-- ================= SETUP ================= -->
+        <section class="card quiz-setup" id="quizSetup">
+            <form id="quizForm">
+
+                <div class="quiz-grid">
+
+                    <div class="field">
+                        <label for="quizSubject">Subject</label>
+                        <input class="input" id="quizSubject" list="quizSubjectList" autocomplete="off"
+                            placeholder="e.g. Mathematics">
+                        <datalist id="quizSubjectList"></datalist>
+                    </div>
+
+                    <div class="field">
+                        <label for="quizChapter">Chapter / unit</label>
+                        <input class="input" id="quizChapter" list="quizChapterList" autocomplete="off"
+                            placeholder="e.g. Chapter 3 — Integration">
+                        <datalist id="quizChapterList"></datalist>
+                    </div>
+
+                    <div class="field">
+                        <label for="quizTopic">Topic (optional)</label>
+                        <input class="input" id="quizTopic" autocomplete="off"
+                            placeholder="e.g. integration by parts">
+                    </div>
+
+                    <div class="field">
+                        <label for="quizCount">Questions</label>
+                        <select class="select" id="quizCount">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="quizDifficulty">Difficulty</label>
+                        <select class="select" id="quizDifficulty">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                            <option value="mixed">Mixed</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="quizType">Question type</label>
+                        <select class="select" id="quizType">
+                            <option value="mcq" selected>Multiple choice</option>
+                            <option value="tf">True / False</option>
+                            <option value="mixed">Mixed</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="quiz-setup-foot">
+                    <div class="quiz-setup-note">
+                        <button class="ghost-btn btn-sm" type="button" id="quizManageBtn" aria-expanded="false"
+                            aria-controls="quizSubjectsPanel">⚙️ Manage subjects</button>
+                        <span class="hint" id="quizHint"></span>
+                    </div>
+
+                    <div class="quiz-setup-actions">
+                        <button class="ghost-btn" type="button" id="quizNotesBtn">From my notes</button>
+                        <button class="primary-btn" type="submit" id="quizGenerateBtn">Generate with AI</button>
+                    </div>
+                </div>
+
+                <div class="quiz-subjects" id="quizSubjectsPanel" hidden>
+                    <div class="quiz-subjects-head">
+                        <strong>Your subjects</strong>
+                        <div class="quiz-subjects-meta">
+                            <span class="hint" id="quizSubjectsCount"></span>
+                            <button class="ghost-btn btn-sm" type="button" id="quizSubjectsReset">Reset to defaults</button>
+                        </div>
+                    </div>
+
+                    <div class="quiz-subject-chips" id="quizSubjectChips"></div>
+
+                    <div class="quiz-subject-add">
+                        <input class="input" id="quizSubjectNew" autocomplete="off"
+                            placeholder="Add a subject, e.g. Operating Systems">
+                        <button class="secondary-btn btn-sm" type="button" id="quizSubjectAdd">Add</button>
+                    </div>
+                </div>
+
+            </form>
+        </section>
+
+
+        <!-- ================= QUIZ AREA ================= -->
+        <section id="quizArea" aria-live="polite"></section>
+
+
+        <!-- ================= HISTORY ================= -->
+        <section class="card quiz-history" id="quizHistoryCard">
+            <div class="quiz-hist-title">
+                <div>
+                    <h2 class="card-title">Quiz history</h2>
+                    <p class="card-sub">Grouped by subject, newest first.</p>
+                </div>
+                <button class="ghost-btn btn-sm" type="button" id="quizClearHistoryBtn">Clear all</button>
+            </div>
+            <div id="quizHistory"></div>
+        </section>
+
+    </main>
+
+
+    <!-- ================= FOOTER ================= -->
+    <footer>
+        <div class="logo">📚 Smart Study</div>
+        <p>Organize. Focus. Achieve.</p>
+        <div class="footer-links">
+            <a href="tasks.html">Tasks</a>
+            <a href="notes.html">Notes</a>
+            <a href="study-plan.html">Study Plan</a>
+            <a href="goals.html">Goals</a>
+            <a href="assistant.html">Assistant</a>
+            <a href="quiz.html">Quiz</a>
+            <a href="settings.html">Settings</a>
+        </div>
+        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
+    </footer>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/quiz.js"></script>
+
+</body>
+
+</html>

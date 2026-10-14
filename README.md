@@ -21,6 +21,7 @@ stays in that browser's `localStorage`, scoped per account.
 | **Study Planner** | Weekly timetable, per-subject hour targets, exam countdowns |
 | **Pomodoro** | Focus / short break / long break cycles, task linking, notifications, sound, and focus history that feeds the charts |
 | **Study Assistant** | AI doubt-answering, grounded in *your own notes* — plus offline tools (notes search, flashcards, summaries, daily briefing) |
+| **AI Quiz** | Subject-wise and chapter-wise practice quizzes — AI-written questions, or offline MCQs built from your own notes. Instant grading with explanations and a saved, per-subject history |
 | **Analytics** | Charts built from pure CSS `conic-gradient` — zero chart libraries |
 | **Settings** | Profile, appearance (light/dark), focus timer defaults, export/import backup, account wipe |
 | **Themes & motion** | CSS token system with a dark mode toggle and a shared motion/micro-animation system |
@@ -35,6 +36,20 @@ stays in that browser's `localStorage`, scoped per account.
    top matching notes; everything is streamed token-by-token.
 3. **Study mode** — no model at all: the assistant searches your notes, builds flashcards,
    summarises topics and gives you a daily briefing. Fully offline.
+
+### 🧠 AI Quiz Generator
+
+The **Quiz** page turns a subject + chapter (+ optional topic) into a practice quiz.
+
+- **With a provider** it asks the model for multiple-choice and true/false questions, grounded
+  in any matching notes, and returns strict JSON that is parsed and validated before use.
+- **Without one**, the "From my notes" button builds questions offline from definition-style
+  note lines (`Term: definition`, `X is what…`), plus fill-in-the-blank fallbacks — no network.
+- Every question is auto-graded; the score, correct answers and one-line explanations are shown,
+  and each attempt is saved to a history grouped subject-wise and chapter-wise.
+- **Your own subject shelf** — subjects are editable right on the Quiz page ("⚙️ Manage subjects"):
+  add or delete any subject by hand; the list is saved per account and starts from a built-in set
+  of your own subjects. "Reset to defaults" restores that built-in set at any time.
 
 ---
 
@@ -76,6 +91,7 @@ smart study/
 ├── study-plan.html             Weekly timetable + exam countdowns + charts
 ├── settings.html               Profile, theme, backups, AI key
 ├── assistant.html              AI study assistant chat
+├── quiz.html                   AI quiz generator (subject/chapter-wise, offline fallback)
 ├── preview.html                Dev-only visual wireframe map of every screen (noindex; safe to delete)
 ├── css/
 │   ├── style.css               Design tokens, core components, motion
@@ -88,6 +104,7 @@ smart study/
 │   ├── app.js                  Shared page chrome (navbar, guard, theme)
 │   ├── ai.js                   AI engine: providers, streaming, retrieval, markdown
 │   ├── assistant.js            Assistant page wiring (chat, quick actions)
+│   ├── quiz.js                 AI quiz generator + offline question builder
 │   ├── landing.js              Landing hero behaviour
 │   ├── authpage.js             Login/signup form logic
 │   ├── dashboard.js            Dashboard aggregation + stats
