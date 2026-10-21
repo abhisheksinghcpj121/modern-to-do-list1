@@ -207,18 +207,19 @@
                         var relayProto = pageProto === "https:" ? "https:" : "http:";
                         base = relayProto + "//" + relayHost + ":3000" + base;
                     } else {
-                        /* a real deployment (GitHub Pages, any public host)
-                           has no relay next to it - keep the site-relative
-                           address so the request fails cleanly instead of
-                           reaching for a port that cannot exist there */
-                        base = String(here.origin || "").replace(/\/+$/, "") + base;
+                        /* A real deployment (GitHub Pages, any public host)
+                           has no relay behind it - the static host only
+                           serves files and answers POST with 405. Leave the
+                           base null so ask() refuses before any request is
+                           made, with a message that explains why. */
+                        base = null;
                     }
                 }
 
                 return {
                     model: model,
                     /* note: no /v1 prefix and no Authorization header */
-                    url: base + "/openai",
+                    url: base ? base + "/openai" : "",
                     init: {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -817,6 +818,18 @@
         var messages = history.concat([{ role: "user", content: question }]);
         var stream = opts.stream !== false;
         var spec = provider.build(cfg, system, messages, stream);
+
+        /* The keyless relay is a helper on the app's own server. On a hosted
+           copy (GitHub Pages) there is none, and the static host rejects the
+           POST with 405. Say that plainly instead of borrowing its error. */
+        if (!spec.url) {
+            return Promise.reject(new Error(
+                "AI answers need the assistant's local server, which a hosted copy " +
+                "of this site does not have. Run the app on your own machine " +
+                "(start-server.bat, then open http://localhost:3000) to use the assistant. " +
+                "Everything else on this page - your notes, flashcards and summaries - works here."
+            ));
+        }
 
         if (opts.signal) {
             spec.init.signal = opts.signal;
