@@ -30,7 +30,9 @@
     var STORE_KEY = "quizzes";
     var SUBJECT_KEY = "quizSubjects";
     var SUBJECT_VERSION_KEY = "quizSubjectsVersion";
-    var SUBJECT_VERSION = 2;
+    /* v3: the shelf now also picks up subjects tracked on the Study Plan
+       page, so every stale or emptied list is reseeded once. */
+    var SUBJECT_VERSION = 3;
     var MAX_STORED = 12;
     var MAX_COUNT = 20;
     var MIN_COUNT = 3;
@@ -123,14 +125,17 @@
         var saved = global.SS.store.get(SUBJECT_KEY);
         var version = global.SS.store.get(SUBJECT_VERSION_KEY);
 
-        if (Array.isArray(saved) && version === SUBJECT_VERSION) {
+        if (Array.isArray(saved) && saved.length && version === SUBJECT_VERSION) {
             return saved.slice();
         }
 
-        /* First visit, or an older list that carried extra subjects:
-           reset to exactly the built-in shelf. From then on the list is
+        /* First visit, an emptied shelf, or a list from an older build:
+           start from the built-in shelf plus every subject the student
+           already tracks on the Study Plan page. From then on the list is
            the student's own - edits are saved as they make them. */
-        var seed = DEFAULT_SUBJECTS.slice();
+        var shelf = M.subjects.all().map(function (s) { return s.name; });
+        var seed = unique(DEFAULT_SUBJECTS.concat(shelf));
+
         saveSubjects(seed);
 
         return seed;
@@ -159,6 +164,16 @@
         list.sort();
         saveSubjects(list);
 
+        /* Mirror onto the shared shelf, so a subject added here also
+           shows up on Study Plan, Tasks, Notes and Goals right away. */
+        var onShelf = M.subjects.all().some(function (s) {
+            return s.name.toLowerCase() === value.toLowerCase();
+        });
+
+        if (!onShelf) {
+            M.subjects.add({ name: value, targetHours: 5 });
+        }
+
         return true;
     }
 
@@ -175,9 +190,13 @@
         return list;
     }
 
-    /* Put the shelf back to exactly the built-in subjects. */
+    /* Put the shelf back to the built-in subjects (plus anything tracked
+       on the Study Plan page, so the two shelves stay in step). */
     function resetSubjects() {
-        saveSubjects(DEFAULT_SUBJECTS.slice());
+        var shelf = M.subjects.all().map(function (s) { return s.name; });
+
+        saveSubjects(unique(DEFAULT_SUBJECTS.concat(shelf)));
+
         return subjectList();
     }
 
