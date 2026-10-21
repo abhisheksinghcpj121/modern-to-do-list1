@@ -200,7 +200,11 @@
        Node server. A relative /api path would then hit the preview server
        and 404, so send it to the backend on port 3000 instead. When the
        app is served by that backend itself the path stays relative, which
-       keeps LAN access working exactly as before. */
+       keeps LAN access working exactly as before.
+
+       A backend only ever exists on your own machine, so this is limited to
+       local names: on a public host (GitHub Pages, any real domain) the
+       relative path is left alone and the app simply runs offline. */
     function apiOrigin() {
 
         var here = global.location || {};
@@ -208,11 +212,21 @@
         var protocol = String(here.protocol || "");
         var host = String(here.hostname || "");
 
+        /* served by the app's own server - relative is always right */
         if (port === "3000") { return ""; }
+
+        /* opened from disk: the backend, if any, is on this machine */
         if (protocol === "file:") { return "http://localhost:3000"; }
 
-        /* same host as the page, so a LAN preview still finds the backend */
-        if (!host) { return ""; }
+        /* only reach for port 3000 on a machine-local preview: localhost,
+           127.0.0.1 / ::1, or a private LAN address. Anything else is a
+           real deployment with no backend behind it. */
+        var local = /^(localhost|127\.0\.0\.1|\[::1\]|::1|0\.0\.0\.0|.*\.local)$/i.test(host) ||
+            /^10\./.test(host) ||
+            /^192\.168\./.test(host) ||
+            /^172\.(1[6-9]|2\d|3[01])\./.test(host);
+
+        if (!local) { return ""; }
 
         return (protocol === "https:" ? "https:" : "http:") + "//" + host + ":3000";
     }

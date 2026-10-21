@@ -133,6 +133,22 @@
         return String(url || "").replace(/\/+$/, "");
     }
 
+    /* A backend can only live on the machine (or LAN) that shows the page,
+       so the port-3000 relay is only ever worth trying on a local name.
+       On a public host - GitHub Pages, a real domain - there is nothing
+       behind that port, and reaching for it would just fail confusingly. */
+    function isLocalHost(host) {
+
+        var h = String(host || "");
+
+        if (!h) { return false; }
+
+        return /^(localhost|127\.0\.0\.1|\[::1\]|::1|0\.0\.0\.0|.*\.local)$/i.test(h) ||
+            /^10\./.test(h) ||
+            /^192\.168\./.test(h) ||
+            /^172\.(1[6-9]|2\d|3[01])\./.test(h);
+    }
+
     var PROVIDERS = {
 
         /* Keyless and instant: an OpenAI-shaped chat endpoint, so the same
@@ -178,17 +194,24 @@
                     var here = global.location || {};
                     var pagePort = String(here.port || "");
                     var pageHost = String(here.hostname || "");
+                    var pageProto = String(here.protocol || "");
 
                     if (pagePort === "3000" && here.origin &&
-                        /^https?:$/.test(String(here.protocol))) {
+                        /^https?:$/.test(pageProto)) {
                         base = String(here.origin).replace(/\/+$/, "") + base;
-                    } else {
+                    } else if (isLocalHost(pageHost) || pageProto === "file:") {
                         /* a static preview (VS Code Live Server, file://)
                            still finds the relay on the same machine, and on
                            a LAN preview on the same host at port 3000 */
                         var relayHost = pageHost || "localhost";
-                        var relayProto = String(here.protocol) === "https:" ? "https:" : "http:";
+                        var relayProto = pageProto === "https:" ? "https:" : "http:";
                         base = relayProto + "//" + relayHost + ":3000" + base;
+                    } else {
+                        /* a real deployment (GitHub Pages, any public host)
+                           has no relay next to it - keep the site-relative
+                           address so the request fails cleanly instead of
+                           reaching for a port that cannot exist there */
+                        base = String(here.origin || "").replace(/\/+$/, "") + base;
                     }
                 }
 
