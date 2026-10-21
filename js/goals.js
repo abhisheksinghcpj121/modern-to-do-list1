@@ -92,7 +92,12 @@
             dataset: { cat: goal.category || "Other" }
         }, [
             el("div", { class: "row-between" }, [
-                el("span", { class: "pill pill-brand", text: goal.category || "Other" }),
+                el("div", { class: "row-wrap", style: { gap: "4px" } }, [
+                    el("span", { class: "pill pill-brand", text: goal.category || "Other" }),
+                    goal.subject
+                        ? el("span", { class: "pill pill-low", text: goal.subject })
+                        : null
+                ]),
                 el("div", { class: "row", style: { gap: "4px" } }, [
                     el("button", {
                         class: "mini-btn",
@@ -235,6 +240,16 @@
             cat.appendChild(el("option", { value: c, text: c }));
         });
 
+        var subj = doc.getElementById("fGoalSubject");
+        var goalSubject = goal ? (goal.subject || "") : "";
+
+        subj.value = goalSubject;
+        if (goalSubject && subj.value !== goalSubject) {
+            /* subject left the shelf but this goal still uses it */
+            subj.appendChild(el("option", { value: goalSubject, text: goalSubject }));
+            subj.value = goalSubject;
+        }
+
         doc.getElementById("goalModalTitle").textContent = goal ? "Edit goal" : "New goal";
         doc.getElementById("fGoalTitle").value = goal ? goal.title : "";
         cat.value = goal ? (goal.category || "Other") : "Exams";
@@ -263,6 +278,7 @@
         var payload = {
             title: title,
             category: doc.getElementById("fCategory").value,
+            subject: doc.getElementById("fGoalSubject").value,
             deadline: doc.getElementById("fDeadline").value || "",
             progress: progress,
             completed: progress === 100
@@ -292,6 +308,13 @@
 
         nodes.grid = doc.getElementById("goalGrid");
         nodes.summaryHost = doc.getElementById("goalSummary");
+
+        /* shared subject shelf + "+ Add", same as the other pages */
+        ui.subjectSelect(doc.getElementById("fGoalSubject"), { blank: "No subject" });
+        ui.subjectAddButton(
+            doc.getElementById("fGoalSubjectAdd"),
+            doc.getElementById("fGoalSubject")
+        );
 
         var addBtn = doc.getElementById("addGoalBtn");
         if (addBtn) {

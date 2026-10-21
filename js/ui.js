@@ -503,6 +503,270 @@
         });
     }
 
+    /* Promise based text prompt - same look as confirmBox but with one
+       input field. Resolves with the trimmed + collapsed value, or null
+       when the user cancels (Escape, backdrop click, × or Cancel). */
+    function askText(options) {
+        var opts = options || {};
+
+        return new Promise(function (resolve) {
+            var settled = false;
+            var backdrop;
+            var input;
+            var error;
+
+            function finish(result) {
+                if (settled) { return; }
+                settled = true;
+
+                doc.removeEventListener("keydown", onKey);
+
+                if (backdrop && backdrop.parentNode) {
+                    backdrop.parentNode.removeChild(backdrop);
+                }
+
+                if (!doc.querySelector(".modal.show")) {
+                    doc.body.classList.remove("no-scroll");
+                }
+
+                resolve(result);
+            }
+
+            function submit() {
+                var value = String(input.value || "")
+                    .trim()
+                    .replace(/\s+/g, " ");
+
+                if (!value) {
+                    error.textContent = opts.required || "Please enter a value.";
+                    input.focus();
+                    return;
+                }
+
+                if (opts.validate) {
+                    var problem = opts.validate(value);
+                    if (problem) {
+                        error.textContent = problem;
+                        input.focus();
+                        return;
+                    }
+                }
+
+                finish(value);
+            }
+
+            input = el("input", {
+                class: "input",
+                type: "text",
+                id: "askTextInput",
+                placeholder: opts.placeholder || "",
+                autocomplete: "off",
+                maxlength: 80
+            });
+
+            error = el("p", { class: "error-text" });
+
+            input.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    submit();
+                }
+            });
+
+            var panel = el("div", { class: "modal-content", role: "dialog", "aria-modal": "true" }, [
+                el("button", {
+                    class: "close-btn",
+                    type: "button",
+                    "aria-label": "Close",
+                    text: "×",
+                    onclick: function () { finish(null); }
+                }),
+                el("h2", { text: opts.title || "Add" }),
+                el("p", { text: opts.message || "" }),
+                el("div", { class: "field" }, [
+                    el("label", { "for": "askTextInput", text: opts.label || "Name" }),
+                    input,
+                    error
+                ]),
+                el("div", { class: "row", style: { justifyContent: "flex-end", gap: "10px", marginTop: "6px" } }, [
+                    el("button", {
+                        class: "ghost-btn btn-sm",
+                        type: "button",
+                        text: opts.cancelText || "Cancel",
+                        onclick: function () { finish(null); }
+                    }),
+                    el("button", {
+                        class: "primary-btn btn-sm",
+                        type: "button",
+                        text: opts.confirmText || "Save",
+                        onclick: submit
+                    })
+                ])
+            ]);
+
+            backdrop = el("div", { class: "modal show" }, [panel]);
+
+            backdrop.addEventListener("click", function (event) {
+                if (event.target === backdrop) {
+                    finish(null);
+                }
+            });
+
+            function onKey(event) {
+                if (event.key === "Escape") {
+                    finish(null);
+                }
+            }
+
+            doc.addEventListener("keydown", onKey);
+            doc.body.classList.add("no-scroll");
+            doc.body.appendChild(backdrop);
+
+            setTimeout(function () {
+                input.focus();
+                input.select();
+            }, 40);
+        });
+    }
+
+
+    /* =========================================
+       SHARED SUBJECT DROPDOWNS
+       Every subject <select> in the app is filled from the same shelf,
+       and each of them can create a brand new subject on the spot: the
+       "+ Add" button opens a tiny prompt, saves the name to the shared
+       shelf (5 hours/week by default, adjustable on the Study Plan
+       page) and selects it - so the subject instantly shows up on Study
+       Plan, Tasks, Notes, Goals, Quiz and the dashboard.
+       ========================================= */
+
+    var NEW_SUBJECT_HOURS = 5;
+    var subjectSelects = [];
+
+    function subjectShelf(extra) {
+
+        var M = (global.SS && global.SS.models) || {};
+        var names = ((M.subjects && M.subjects.all()) || [])
+            .map(function (s) { return s.name; });
+
+        if (!names.length && M.DEFAULT_SUBJECTS) {
+            names = M.DEFAULT_SUBJECTS.slice();
+        }
+
+        (typeof extra === "function" ? extra() : (extra || [])).forEach(function (n) {
+            if (n) { names.push(n); }
+        });
+
+        return names.filter(function (n, i, a) {
+            return a.indexOf(n) === i;
+        });
+    }
+
+    function fillSubjectSelect(entry) {
+
+        var select = entry.select;
+        var opts = entry.opts || {};
+        var keep = select.value;
+
+        clear(select);
+
+        if (opts.blank) {
+            var blank = typeof opts.blank === "string"
+                ? { value: "", text: opts.blank }
+                : opts.blank;
+
+            select.appendChild(el("option", { value: blank.value, text: blank.text }));
+        }
+
+        subjectShelf(opts.extra).forEach(function (name) {
+            select.appendChild(el("option", { value: name, text: name }));
+        });
+
+        /* An explicit `selected` wins (null/"" = first option); otherwise
+           the previous value is kept, so legacy subjects that left the
+           shelf stay visible instead of silently snapping to the top. */
+        var target = "selected" in opts ? opts.selected : keep;
+
+        if (target) {
+            select.value = target;
+
+            if (select.value !== target) {
+                select.appendChild(el("option", { value: target, text: target }));
+                select.value = target;
+            }
+        } else if ("selected" in opts) {
+            select.selectedIndex = 0;
+        }
+    }
+
+    /* Register (or re-fill) a subject dropdown. Call this BEFORE
+       attaching your own change listener. */
+    function subjectSelect(select, opts) {
+        if (!select) { return select; }
+
+        var entry = subjectSelects.filter(function (e) { return e.select === select; })[0];
+
+        if (entry) {
+            entry.opts = opts || {};
+            fillSubjectSelect(entry);
+        } else {
+            entry = { select: select, opts: opts || {} };
+            subjectSelects.push(entry);
+            fillSubjectSelect(entry);
+        }
+
+        return select;
+    }
+
+    /* Rebuild every dropdown registered on this page, so a subject
+       added a second ago is immediately selectable everywhere. */
+    function refreshSubjectSelects() {
+        subjectSelects.forEach(fillSubjectSelect);
+    }
+
+    /* The little "+ Add" button that sits next to a subject dropdown. */
+    function subjectAddButton(button, select, onAdded) {
+        if (!button || !select) { return button; }
+
+        button.addEventListener("click", function () {
+
+            var M = (global.SS && global.SS.models) || {};
+
+            askText({
+                title: "Add a subject",
+                message: "It joins your subject shelf and appears on every page.",
+                label: "Subject name",
+                placeholder: "e.g. Operating Systems",
+                confirmText: "Add subject",
+                required: "Please enter a subject name."
+            }).then(function (name) {
+
+                if (!name) { return; }
+
+                var exists = subjectShelf().filter(function (n) {
+                    return n.toLowerCase() === name.toLowerCase();
+                })[0];
+
+                if (exists) {
+                    toast("“" + exists + "” is already on your shelf", "info");
+                } else if (M.subjects) {
+                    M.subjects.add({ name: name, targetHours: NEW_SUBJECT_HOURS });
+                    toast("Subject added 📚", "success");
+                }
+
+                refreshSubjectSelects();
+                select.value = exists || name;
+
+                /* let the page react (autosave, filters, re-renders, …) */
+                select.dispatchEvent(new global.Event("change"));
+
+                if (onAdded) { onAdded(); }
+            });
+        });
+
+        return button;
+    }
+
 
     /* =========================================
        THEME
@@ -894,6 +1158,98 @@
        PAGE CHROME
        ========================================= */
 
+    /* =========================================
+       SYNC STATUS CHIP
+       An honest little readout of the link to
+       the Node backend, so "is it connected?"
+       never needs guessing.
+       ========================================= */
+
+    var SYNC_STATES = {
+        syncing: { text: "☁️ Syncing…", cls: "", title: "Sending your latest changes to the server" },
+        synced: { text: "☁️ Synced", cls: "ok", title: "Saved to your account on the server" },
+        offline: { text: "⚠️ Server offline", cls: "warn", title: "The backend is not answering - everything is safe on this device and syncs when it is back" },
+        local: { text: "📱 This device only", cls: "", title: "Guest account - data never leaves this browser" }
+    };
+
+    function paintSyncChip(state) {
+
+        var chip = $("[data-sync-status]");
+
+        if (!chip) { return; }
+
+        var info = SYNC_STATES[state] || SYNC_STATES.local;
+
+        chip.textContent = info.text;
+        chip.title = info.title;
+        chip.classList.toggle("ok", info.cls === "ok");
+        chip.classList.toggle("warn", info.cls === "warn");
+    }
+
+    /* Creates the chip next to the user name and keeps it current:
+       storage.js reports every sync, plus a reachability probe. */
+    function initSyncChip(session) {
+
+        if (!session) { return; }
+
+        var nameNode = $("[data-user-name]");
+        var host = (nameNode && nameNode.parentNode) || $(".nav-actions") || $(".navbar");
+
+        if (!host) { return; }
+
+        var chip = $("[data-sync-status]");
+
+        /* Guest mode: this slot is the quick way into the admin console -
+           an "admin" link at the top of the page, standing where the chip
+           used to read "This device only". Signed-in accounts keep the
+           honest sync readout below. */
+        if (session.guest) {
+
+            if (!chip || String(chip.tagName).toLowerCase() !== "a") {
+
+                if (chip && chip.parentNode) {
+                    chip.parentNode.removeChild(chip);
+                }
+
+                chip = el("a", {
+                    class: "chip",
+                    href: "admin.html",
+                    dataset: { syncStatus: "" },
+                    title: "Admin dashboard - the operations console for this server"
+                }, ["admin"]);
+
+                host.insertBefore(chip, nameNode || null);
+            }
+
+            return;
+        }
+
+        if (chip && String(chip.tagName).toLowerCase() === "a") {
+            /* signed back in - the admin link steps aside for the sync readout */
+            if (chip.parentNode) { chip.parentNode.removeChild(chip); }
+            chip = null;
+        }
+
+        if (!chip) {
+            chip = el("span", { class: "chip", dataset: { syncStatus: "" } }, []);
+            host.insertBefore(chip, nameNode || null);
+        }
+
+        if (!Store.sync || !Store.sync.isSyncedAccount()) {
+            paintSyncChip("offline");
+            return;
+        }
+
+        paintSyncChip("syncing");
+
+        Store.sync.onState(paintSyncChip);
+
+        Store.sync.probe().then(function (ok) {
+            paintSyncChip(ok ? "synced" : "offline");
+        });
+    }
+
+
     function initChrome() {
         var toggle = $("[data-menu-toggle]");
         var nav = $("#primaryNav");
@@ -955,6 +1311,9 @@
             nameNode.textContent = session.name || session.email;
         }
 
+        /* cloud status next to it (no chip on the login/signup pages) */
+        initSyncChip(session);
+
         /* footer year */
         $$("[data-year]").forEach(function (n) {
             n.textContent = new Date().getFullYear();
@@ -984,6 +1343,10 @@
         openModal: openModal,
         closeModal: closeModal,
         confirmBox: confirmBox,
+        askText: askText,
+        subjectSelect: subjectSelect,
+        refreshSubjectSelects: refreshSubjectSelects,
+        subjectAddButton: subjectAddButton,
         theme: Theme,
         beep: beep,
         initChrome: initChrome,

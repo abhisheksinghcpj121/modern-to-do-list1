@@ -342,7 +342,10 @@
 
         ui.clear(host);
 
-        var subjects = M.taskView.subjects();
+        /* The whole subject shelf (all 8 built-ins) so the filter always
+           offers every given subject, plus any older subject that only
+           exists on old tasks. */
+        var subjects = suggestSubjects();
 
         function chip(value, label) {
             var on = state.subject === value;
@@ -374,8 +377,14 @@
 
     var editingId = null;
 
+    /* The student's own subject shelf first (shared with Study Plan and
+       Quiz), then anything older tasks used that is not on the shelf. */
     function suggestSubjects() {
-        var base = ["Mathematics", "Physics", "Chemistry", "Computer Science", "English"];
+
+        var base = M.subjects.all().map(function (s) { return s.name; });
+
+        if (!base.length) { base = M.DEFAULT_SUBJECTS.slice(); }
+
         var extra = M.taskView.subjects();
 
         return base.concat(extra).filter(function (v, i, a) {
@@ -426,16 +435,18 @@
         var title = doc.getElementById("taskModalTitle");
         var err = doc.getElementById("taskFormError");
 
-        /* fill subject options */
-        ui.clear(fSubject);
-        suggestSubjects().forEach(function (s) {
-            fSubject.appendChild(el("option", { value: s, text: s }));
+        /* fill subject options - the shared shelf first, then legacy
+           names, plus the "+ Add" button for a brand new subject */
+        var options = suggestSubjects();
+
+        ui.subjectSelect(fSubject, {
+            extra: function () { return M.taskView.subjects(); }
         });
 
         title.textContent = task ? "Edit task" : "New task";
 
         fTitle.value = task ? task.title : "";
-        fSubject.value = task ? (task.subject || "Mathematics") : "Mathematics";
+        fSubject.value = task ? (task.subject || options[0]) : options[0];
         fDate.value = task ? (task.date || "") : ui.todayISO();
         fPriority.value = task ? (task.priority || "medium") : "medium";
         fNotes.value = task ? (task.notes || "") : "";
@@ -627,6 +638,12 @@
         if (clearBtn) {
             clearBtn.addEventListener("click", clearCompleted);
         }
+
+        ui.subjectAddButton(
+            doc.getElementById("fSubjectAdd"),
+            doc.getElementById("fSubject"),
+            renderSubjectFilter
+        );
 
         var form = doc.getElementById("taskForm");
         if (form) {

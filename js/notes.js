@@ -19,6 +19,7 @@
     var state = {
         query: "",
         tag: "all",
+        subject: "all",
         activeId: null
     };
 
@@ -57,6 +58,10 @@
             return false;
         }
 
+        if (state.subject !== "all" && (note.subject || "") !== state.subject) {
+            return false;
+        }
+
         if (!state.query) {
             return true;
         }
@@ -87,6 +92,13 @@
 
         if (note.pinned) {
             foot.insertBefore(el("span", { text: "📌 pinned" }), foot.firstChild);
+        }
+
+        if (note.subject) {
+            foot.insertBefore(
+                el("span", { class: "subject", text: note.subject }),
+                foot.firstChild
+            );
         }
 
         return el("button", {
@@ -123,18 +135,22 @@
         nodes.count.textContent = M.notes.count() + " notes";
 
         if (!notes.length) {
+            var filtering = state.query || state.tag !== "all" || state.subject !== "all";
+
             nodes.list.appendChild(
                 ui.emptyState(
                     "📝",
-                    state.query || state.tag !== "all" ? "No matching notes" : "No notes yet",
-                    state.query || state.tag !== "all"
-                        ? "Try another keyword or clear the tag filter."
+                    filtering ? "No matching notes" : "No notes yet",
+                    filtering
+                        ? "Try another keyword or clear the filters."
                         : "Capture lecture notes, formulas and summaries here.",
                     "Write a note",
                     function () {
                         state.query = "";
                         state.tag = "all";
+                        state.subject = "all";
                         nodes.search.value = "";
+                        nodes.subjectFilter.value = "all";
                         renderTagFilter();
                         newNote();
                     }
@@ -199,6 +215,15 @@
         nodes.body.value = note.content || "";
         nodes.tags.value = tagsOf(note).join(", ");
 
+        /* keep the note's subject selectable even if it was later
+           removed from the shelf, so autosave cannot strip it */
+        var subj = note.subject || "";
+        nodes.subject.value = subj;
+        if (subj && nodes.subject.value !== subj) {
+            nodes.subject.appendChild(el("option", { value: subj, text: subj }));
+            nodes.subject.value = subj;
+        }
+
         ui.$$("[data-color]").forEach(function (b) {
             b.classList.toggle("active", b.dataset.color === (note.color || ""));
         });
@@ -218,6 +243,7 @@
             title: nodes.title.value.trim() || "Untitled note",
             content: nodes.body.value,
             tags: parseTags(nodes.tags.value),
+            subject: nodes.subject.value,
             color: (ui.$("[data-color].active") || {}).dataset
                 ? ui.$("[data-color].active").dataset.color
                 : ""
@@ -249,13 +275,16 @@
         /* a brand new note must never be hidden behind an active filter */
         state.query = "";
         state.tag = "all";
+        state.subject = "all";
         nodes.search.value = "";
+        nodes.subjectFilter.value = "all";
         renderTagFilter();
 
         var note = M.notes.add({
             title: "Untitled note",
             content: "",
             tags: [],
+            subject: "",
             pinned: false,
             color: ui.subjectColor("general")
         });
@@ -327,6 +356,8 @@
         nodes.title = doc.getElementById("noteTitle");
         nodes.body = doc.getElementById("noteBody");
         nodes.tags = doc.getElementById("noteTags");
+        nodes.subject = doc.getElementById("noteSubject");
+        nodes.subjectFilter = doc.getElementById("noteSubjectFilter");
         nodes.search = doc.getElementById("noteSearch");
         nodes.tagRow = doc.getElementById("noteTagFilter");
         nodes.count = doc.getElementById("noteCount");
@@ -336,6 +367,22 @@
         nodes.title.addEventListener("input", autosave);
         nodes.body.addEventListener("input", autosave);
         nodes.tags.addEventListener("input", autosave);
+
+        /* Both dropdowns run off the shared subject shelf, and the
+           editor one carries a "+ Add" button, so a brand new subject
+           created here shows up on every page at once. */
+        ui.subjectSelect(nodes.subject, { blank: "No subject" });
+        ui.subjectSelect(nodes.subjectFilter, {
+            blank: { value: "all", text: "All subjects" }
+        });
+        ui.subjectAddButton(doc.getElementById("noteSubjectAdd"), nodes.subject);
+
+        nodes.subject.addEventListener("change", autosave);
+
+        nodes.subjectFilter.addEventListener("change", function () {
+            state.subject = nodes.subjectFilter.value;
+            renderList();
+        });
 
         /* Ctrl/Cmd + S saves immediately */
         doc.addEventListener("keydown", function (e) {

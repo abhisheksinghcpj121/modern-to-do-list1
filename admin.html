@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Smart Study</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/pages.css">
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+    <header class="navbar">
+        <a href="index.html" class="logo"><span>📚</span> Smart Study <span class="chip">Admin</span></a>
+
+        <div class="nav-actions">
+            <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
+            <button class="icon-btn" id="lockBtn" type="button" aria-label="Sign out" title="Sign out (forget the key)">🔒</button>
+        </div>
+    </header>
+
+
+    <main class="page">
+
+        <!-- ================= LOGIN SCREEN ================= -->
+        <section class="card adm-lock" id="lockView">
+
+            <h1>Admin sign in</h1>
+            <p>The first account created on this server is the admin. Sign in
+                with that Gmail and password to open the console - or set
+                <code>SMART_STUDY_ADMIN_KEY</code> and use the key instead.</p>
+
+            <div class="field">
+                <label for="emailInput">Gmail</label>
+                <input class="input" type="email" id="emailInput" placeholder="you@gmail.com"
+                    autocomplete="username" spellcheck="false">
+            </div>
+
+            <div class="field">
+                <label for="keyInput">Password</label>
+                <input class="input" type="password" id="keyInput" placeholder="Your account password"
+                    autocomplete="current-password">
+            </div>
+
+            <p class="text-danger" id="keyError" hidden></p>
+
+            <button class="primary-btn" id="unlockBtn" type="button">Sign in</button>
+        </section>
+
+        <!-- ================= DASHBOARD ================= -->
+        <section id="adminView" hidden>
+
+            <h1>Server overview</h1>
+
+            <div class="stat-grid" style="margin-bottom: 22px">
+
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div>
+                        <strong id="statUsers">0</strong>
+                        <span>Accounts</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon ok">🔑</div>
+                    <div>
+                        <strong id="statSessions">0</strong>
+                        <span>Live sessions</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon info">💾</div>
+                    <div>
+                        <strong id="statSize">0 KB</strong>
+                        <span>Stored data</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon warn">⏱</div>
+                    <div>
+                        <strong id="statUptime">0m</strong>
+                        <span>Uptime</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">🟢</div>
+                    <div>
+                        <strong id="statNode">—</strong>
+                        <span>Node version</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="adm-toolbar">
+                <input class="input adm-search" type="search" id="searchInput"
+                    placeholder="Search name or email…" aria-label="Search accounts">
+
+                <div class="adm-toolbar-actions">
+                    <button class="secondary-btn" id="cleanupBtn" type="button">🧹 Clean expired sessions</button>
+                    <button class="ghost-btn" id="refreshBtn" type="button">⟳ Refresh</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Joined</th>
+                            <th>Last active</th>
+                            <th>Data</th>
+                            <th>Sessions</th>
+                            <th aria-label="Actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="userRows"></tbody>
+                </table>
+
+                <div id="noUsers" hidden></div>
+            </div>
+
+        </section>
+    </main>
+
+
+    <!-- ================= USER DETAIL MODAL ================= -->
+    <div class="modal" id="userModal" aria-hidden="true">
+        <div class="modal-content wide" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" data-user-close aria-label="Close">×</button>
+
+            <h2 id="umName">Account</h2>
+            <p id="umEmail"></p>
+
+            <table class="adm-table" id="umCollections"></table>
+
+            <p class="hint" id="umFooter"></p>
+        </div>
+    </div>
+
+    <!-- ================= RESET PASSWORD MODAL ================= -->
+    <div class="modal" id="pwModal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true">
+
+            <button class="close-btn" type="button" data-pw-close aria-label="Close">×</button>
+
+            <h2>Reset password</h2>
+            <p id="pwWho">For this account. Every device signed in as them will be logged out.</p>
+
+            <div class="field">
+                <label for="pwInput">New password</label>
+                <input class="input" type="password" id="pwInput" placeholder="At least 8 characters"
+                    autocomplete="new-password">
+            </div>
+
+            <div class="adm-modal-actions">
+                <button class="ghost-btn" type="button" data-pw-close>Cancel</button>
+                <button class="primary-btn" type="button" id="pwSaveBtn">Set password</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

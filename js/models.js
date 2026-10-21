@@ -90,6 +90,30 @@
     }
 
 
+    /* =========================================
+       BUILT-IN SUBJECT SHELF
+       The subjects every account starts with.
+       One shared list: the Study Plan page,
+       the Tasks dropdown and the Quiz page all
+       read from here, so subjects are added
+       exactly once and show up everywhere.
+       ========================================= */
+
+    var DEFAULT_SUBJECTS = [
+        "DBMS (Database Management System)",
+        "Web Technology",
+        "DAA (Design & Analysis of Algorithms)",
+        "Compiler Design",
+        "Application of Soft Computing",
+        "Constitution of India",
+        "Computer Graphics",
+        "Image Processing"
+    ];
+
+    /* Weekly hour target each subject gets when it is first seeded */
+    var DEFAULT_TARGET_HOURS = [6, 5, 5, 4, 4, 2, 5, 4];
+
+
     var M = {
 
         tasks: make("tasks"),
@@ -97,7 +121,24 @@
         goals: make("goals"),
         sessions: make("sessions"),
         exams: make("exams"),
-        subjects: make("subjects"),
+
+        subjects: Object.assign(make("subjects"), {
+
+            /* Guarantees the built-in shelf exists for this account.
+               Idempotent and cheap, so it is safe to call on every page
+               load - accounts created before the subject shelf existed
+               get backfilled instead of staying empty forever. */
+            seedDefaults: function () {
+                if (this.count()) { return false; }
+
+                DEFAULT_SUBJECTS.forEach(function (name, i) {
+                    this.add({ name: name, targetHours: DEFAULT_TARGET_HOURS[i] });
+                }, this);
+
+                return true;
+            }
+        }),
+
         plan: make("plan"),
 
         /* ---------- derived study statistics ---------- */
@@ -166,22 +207,6 @@
                 }
 
                 return days;
-            },
-
-            completedSessions: function () {
-                return M.sessions.all().filter(function (s) {
-                    return s.mode === "focus" && s.completed === true;
-                }).length;
-            },
-
-            lastWeekMinutes: function () {
-                var total = 0;
-
-                for (var i = 0; i < 7; i++) {
-                    total += this.minutesOn(U().addDays(U().todayISO(), -i));
-                }
-
-                return total;
             },
 
             /* ---------- hourly and per-subject breakdowns ---------- */
@@ -398,10 +423,6 @@
 
         /* ---------- stats ---------- */
 
-        recurringCount: function () {
-            return M.tasks.all().filter(M.taskView.isRecurring).length;
-        },
-
         stats: function () {
             var all = M.tasks.all();
             var done = all.filter(function (t) { return t.completed; });
@@ -553,6 +574,10 @@
             return U().diffDays(U().todayISO(), exam.date);
         }
     };
+
+
+    /* read-only copy of the built-in shelf, for pages that need a fallback */
+    M.DEFAULT_SUBJECTS = DEFAULT_SUBJECTS.slice();
 
 
     global.SS = global.SS || {};

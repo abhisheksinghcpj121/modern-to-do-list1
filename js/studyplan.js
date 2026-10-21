@@ -23,84 +23,92 @@
 
 
     /* =========================================
-       TIMETABLE
+       WEEK  (simple day list: today first)
        ========================================= */
 
-    function dayColumn(day) {
+    /* Today, then tomorrow, then the rest of the week in order. */
+    function dayOrder() {
 
-        var isToday = day === ui.weekdayToday();
+        var today = ui.weekdayToday();
+        var order = [today, (today + 1) % 7];
 
-        var head = el("div", { class: "day-head" }, [
-            el("strong", { text: ui.weekdayName(day, true) }),
-            el("small", { text: ui.weekdayName(day).slice(0, 3) })
+        for (var d = 0; d < 7; d++) {
+            if (order.indexOf(d) === -1) { order.push(d); }
+        }
+
+        return order;
+    }
+
+    function dayLabel(day) {
+
+        var today = ui.weekdayToday();
+        var delta = (day - today + 7) % 7;
+
+        if (delta === 0) { return "Today"; }
+        if (delta === 1) { return "Tomorrow"; }
+
+        return ui.weekdayName(day);
+    }
+
+    function sessionRow(p) {
+
+        return el("button", {
+            class: "plan-session",
+            type: "button",
+            title: "Click to edit",
+            onclick: function () { openSession(p); }
+        }, [
+            el("i", { class: "subject-dot", style: { background: ui.subjectColor(p.subject) } }),
+            el("strong", { text: p.start }),
+            el("span", { class: "ps-subject", text: p.subject }),
+            p.topic ? el("small", { class: "ps-topic", text: p.topic }) : null,
+            el("small", { class: "ps-mins", text: ui.fmtMinutes(p.minutes) })
         ]);
+    }
 
-        var col = el("div", {
-            class: "day-col" + (isToday ? " today" : ""),
-            dataset: { day: String(day) }
-        }, [head]);
+    function dayRow(day) {
 
         var sessions = M.planView.forDay(day);
+        var isToday = day === ui.weekdayToday();
+
         var minutes = sessions.reduce(function (s, x) {
             return s + (Number(x.minutes) || 0);
         }, 0);
 
-        if (minutes) {
-            col.appendChild(
-                el("small", {
-                    class: "text-xs text-muted",
-                    style: { textAlign: "center", fontWeight: "700" },
-                    text: ui.fmtMinutes(minutes)
-                })
-            );
-        }
-
-        if (!sessions.length) {
-            col.appendChild(
-                el("small", {
-                    class: "text-xs text-muted",
-                    style: { textAlign: "center", padding: "18px 0" },
-                    text: "Free"
-                })
-            );
-        }
-
-        sessions.forEach(function (p) {
-            col.appendChild(
-                el("div", {
-                    class: "session",
-                    style: { borderLeftColor: ui.subjectColor(p.subject) },
-                    title: p.subject + " — " + (p.topic || ""),
-                    onclick: function () { openSession(p); }
-                }, [
-                    el("strong", { text: p.subject }),
-                    el("small", { text: p.start + " · " + ui.fmtMinutes(p.minutes) }),
-                    p.topic ? el("small", { text: p.topic }) : null
-                ])
-            );
-        });
-
-        col.appendChild(
+        var head = el("div", { class: "plan-day-head" }, [
+            el("strong", { text: dayLabel(day) }),
+            isToday ? null : el("small", { text: ui.weekdayName(day) }),
+            minutes ? el("span", { class: "chip", text: ui.fmtMinutes(minutes) }) : null,
             el("button", {
-                class: "add-slot",
+                class: "mini-btn",
                 type: "button",
+                text: "+",
                 title: "Add a session on " + ui.weekdayName(day),
                 "aria-label": "Add session on " + ui.weekdayName(day),
-                text: "+",
                 onclick: function () { openSession(null, day); }
             })
-        );
+        ]);
 
-        return col;
+        var row = el("div", { class: "plan-day" + (isToday ? " today" : "") }, [head]);
+
+        if (!sessions.length) {
+            row.appendChild(
+                el("p", { class: "plan-free", text: "Free — nothing planned" })
+            );
+        } else {
+            sessions.forEach(function (p) { row.appendChild(sessionRow(p)); });
+        }
+
+        return row;
     }
 
     function renderPlan() {
 
         ui.clear(nodes.grid);
 
-        for (var i = 0; i < 7; i++) {
-            nodes.grid.appendChild(dayColumn(i));
-        }
+        dayOrder().forEach(function (day) {
+            nodes.grid.appendChild(dayRow(day));
+        });
 
         ui.revealOnce(nodes.grid);
     }
@@ -125,28 +133,15 @@
 
         Charts.subjectBars(nodes.subjectList, rows);
 
+        /* one quiet summary line instead of a wall of stat cards */
         var totalPlanned = M.planView.totalMinutes() / 60;
         var totalTarget = rows.reduce(function (s, r) { return s + r.target; }, 0);
 
-        if (nodes.planStats) {
-            ui.clear(nodes.planStats);
-
-            [
-                ["Sessions", String(M.plan.count())],
-                ["Planned", ui.fmtMinutes(totalPlanned)],
-                ["Weekly target", totalTarget + "h"],
-                ["Subjects", String(rows.length)]
-            ].forEach(function (pair) {
-                nodes.planStats.appendChild(
-                    el("div", { class: "stat-card" }, [
-                        el("div", { class: "stat-icon info", text: "🗓" }),
-                        el("div", {}, [
-                            el("strong", { text: pair[1] }),
-                            el("span", { text: pair[0] })
-                        ])
-                    ])
-                );
-            });
+        if (nodes.weekSummary) {
+            nodes.weekSummary.textContent = M.plan.count()
+                ? M.plan.count() + " sessions · " + ui.fmtMinutes(totalPlanned) +
+                  " planned of " + totalTarget + "h target"
+                : "Nothing planned yet — add your first session above.";
         }
     }
 
@@ -238,26 +233,6 @@
        MODALS
        ========================================= */
 
-    function fillSubjectSelect(node, selected) {
-        var names = M.subjects.all().map(function (s) { return s.name; });
-
-        if (names.indexOf(selected) === -1 && selected) {
-            names.push(selected);
-        }
-
-        if (!names.length) {
-            names = ["Mathematics", "Physics", "Chemistry", "Computer Science", "English"];
-        }
-
-        ui.clear(node);
-
-        names.forEach(function (n) {
-            node.appendChild(el("option", { value: n, text: n }));
-        });
-
-        node.value = selected || names[0];
-    }
-
     /* ---------- session ---------- */
 
     function openSession(session, presetDay) {
@@ -269,7 +244,9 @@
 
         var subjectNode = doc.getElementById("pSubject");
 
-        fillSubjectSelect(subjectNode, session ? session.subject : null);
+        ui.subjectSelect(subjectNode, {
+            selected: session ? session.subject : null
+        });
 
         doc.getElementById("pDay").value = session ? session.day : (presetDay === undefined ? ui.weekdayToday() : presetDay);
         doc.getElementById("pStart").value = session ? session.start : "16:00";
@@ -368,6 +345,8 @@
             M.subjects.add(payload);
             ui.toast("Subject added 📚", "success");
         }
+
+        ui.refreshSubjectSelects();
 
         ui.closeModal("subjectModal");
         editingSubject = null;
@@ -576,7 +555,7 @@
 
         nodes.subjectList = doc.getElementById("subjectList");
         nodes.examList = doc.getElementById("examList");
-        nodes.planStats = doc.getElementById("planStats");
+        nodes.weekSummary = doc.getElementById("weekSummary");
 
         doc.getElementById("addSessionBtn").addEventListener("click", function () {
             openSession(null, ui.weekdayToday());
@@ -597,6 +576,13 @@
         if (manageBtn) {
             manageBtn.addEventListener("click", openSubjectManager);
         }
+
+        /* the session modal's subject dropdown can create one on the spot */
+        ui.subjectAddButton(
+            doc.getElementById("pSubjectAdd"),
+            doc.getElementById("pSubject"),
+            renderSubjects
+        );
 
         bindModal("sessionModal", "sessionForm", saveSession, "sessionCancelBtn");
         bindModal("subjectModal", "subjectForm", saveSubject, "subjectCancelBtn");

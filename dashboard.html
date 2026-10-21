@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -9,9 +9,41 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/pages.css">
+    <link rel="stylesheet" href="css/dashboard-premium.css">
 </head>
 
 <body>
+
+    <!-- ================= PREMIUM BACKDROP ================= -->
+    <div class="aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
+    <div class="noise" aria-hidden="true"></div>
+
+    <!-- gradient defs for sparklines -->
+    <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+        <defs>
+            <linearGradient id="gradPomo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#34d399" />
+                <stop offset="0.5" stop-color="#6366f1" />
+                <stop offset="1" stop-color="#a78bfa" />
+            </linearGradient>
+            <linearGradient id="sparkA" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#34d399" />
+                <stop offset="1" stop-color="#6366f1" />
+            </linearGradient>
+            <linearGradient id="sparkB" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#a78bfa" />
+                <stop offset="1" stop-color="#22d3ee" />
+            </linearGradient>
+            <linearGradient id="sparkC" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#fbbf24" />
+                <stop offset="1" stop-color="#f87171" />
+            </linearGradient>
+            <linearGradient id="sparkD" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#22d3ee" />
+                <stop offset="1" stop-color="#818cf8" />
+            </linearGradient>
+        </defs>
+    </svg>
 
     <!-- ================= NAVBAR ================= -->
     <header class="navbar">
@@ -32,289 +64,243 @@
             <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
             <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
             <span class="chip" data-user-name title="Signed in">Student</span>
-            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">Logout</button>
             <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
                 aria-expanded="false">☰</button>
         </div>
     </header>
 
 
-    <main class="page">
+    <main class="wrap">
+        <div class="grid">
 
-        <!-- ================= GREETING ================= -->
-        <section class="greet">
-            <div>
-                <h1 id="greetName">Hello 👋</h1>
-                <p id="greetDate"></p>
-            </div>
-
-            <div class="greet-ring" id="ringPct">0%</div>
-        </section>
-
-        <!-- Overdue warning -->
-        <div class="alert-bar" id="overdueAlert" style="display: none"></div>
-
-        <!-- ================= QUICK ADD ================= -->
-        <div class="quick-add">
-            <input class="input" type="text" id="quickTaskInput"
-                placeholder="Quick add a task for today…  (press Enter)">
-            <button class="primary-btn" id="quickAddBtn" type="button">Add task</button>
-        </div>
-
-        <!-- ================= STATS ================= -->
-        <section class="stat-grid" style="margin-bottom: 22px">
-
-            <div class="stat-card">
-                <div class="stat-icon warn">⏳</div>
+            <!-- ================= HERO ================= -->
+            <section class="hero c12">
                 <div>
-                    <strong id="statPending">0</strong>
-                    <span>Pending tasks</span>
+                    <div class="hi" id="greetName">Hello 👋</div>
+                    <div class="sub" id="greetMeta">Loading…</div>
                 </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon ok">✅</div>
-                <div>
-                    <strong id="statDone">0</strong>
-                    <span>Completed</span>
+                <div class="actions">
+                    <button class="btn" type="button" id="heroFocus">▶ Focus Mode</button>
+                    <span class="du-quick">
+                        <input type="text" id="quickTaskInput" placeholder="Quick task for today…" aria-label="Quick add a task">
+                        <button class="btn" type="button" id="quickAddBtn" title="Add task">＋ Add</button>
+                    </span>
+                    <a class="btn primary" href="assistant.html">✨ Ask AI</a>
                 </div>
-            </div>
+            </section>
 
-            <div class="stat-card">
-                <div class="stat-icon info">⏱</div>
-                <div>
-                    <strong id="statFocus">0m</strong>
-                    <span>Focus today</span>
+            <!-- Overdue warning -->
+            <div class="alert-bar c12" id="overdueAlert" style="display: none"></div>
+
+            <!-- ================= KPI ROW ================= -->
+            <section class="card kpi c3">
+                <div class="top">
+                    <span class="ico">⏱️</span>
+                    <span class="delta" id="kpiFocusDelta">—</span>
                 </div>
-            </div>
+                <div class="val num" id="kpiFocusVal">—</div>
+                <div class="lbl">Study time today</div>
+                <svg class="spark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="line" id="kpiFocusSpark" stroke="url(#sparkA)" d="" />
+                </svg>
+            </section>
 
-            <div class="stat-card">
-                <div class="stat-icon">🔥</div>
-                <div>
-                    <strong id="statStreak">0d</strong>
-                    <span>Study streak</span>
+            <section class="card kpi c3">
+                <div class="top">
+                    <span class="ico">✅</span>
+                    <span class="delta" id="kpiTasksDelta">—</span>
                 </div>
-            </div>
+                <div class="val num" id="kpiTasksVal">—</div>
+                <div class="lbl">Tasks complete</div>
+                <svg class="spark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="line" id="kpiTasksSpark" stroke="url(#sparkB)" d="" />
+                </svg>
+            </section>
 
-        </section>
+            <section class="card kpi c3">
+                <div class="top">
+                    <span class="ico">🎯</span>
+                    <span class="delta" id="kpiScoreDelta">—</span>
+                </div>
+                <div class="val num" id="kpiScoreVal">—</div>
+                <div class="lbl">Focus score</div>
+                <svg class="spark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="line" id="kpiScoreSpark" stroke="url(#sparkC)" d="" />
+                </svg>
+            </section>
 
+            <section class="card kpi c3">
+                <div class="top">
+                    <span class="ico">🔥</span>
+                    <span class="delta" id="kpiStreakDelta">—</span>
+                </div>
+                <div class="val num" id="kpiStreakVal">—</div>
+                <div class="lbl">Current streak</div>
+                <svg class="spark" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true">
+                    <path class="line" id="kpiStreakSpark" stroke="url(#sparkD)" d="" />
+                </svg>
+            </section>
 
-        <!-- ================= MAIN GRID ================= -->
-        <div class="dash-grid">
-
-            <!-- ---------- LEFT COLUMN ---------- -->
-            <div class="dash-col">
-
-                <!-- Overall progress -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 16px">
-                        <div>
-                            <div class="card-title">Task completion</div>
-                            <div class="card-sub">Across every subject</div>
-                        </div>
-                        <strong style="color: var(--brand); font-size: 20px" id="dashPct">0%</strong>
-                    </div>
-
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="dashBar"></div>
-                    </div>
-
-                    <div id="dashCounts" style="margin-top: 20px"></div>
-                </section>
-
-                <!-- Today tasks -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 6px">
-                        <div>
-                            <div class="card-title">Today's tasks</div>
-                            <div class="card-sub">Due today and overdue items</div>
-                        </div>
-                        <span class="pill pill-brand" id="todayCount"></span>
-                    </div>
-
-                    <div id="todayTasks"></div>
-                </section>
-
-                <!-- Study time chart -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 10px">
-                        <div>
-                            <div class="card-title">Focus time this week</div>
-                            <div class="card-sub">Minutes completed per day</div>
-                        </div>
-                    </div>
-
-                    <div class="chart-box" id="weekChart"></div>
-                </section>
-
-                <!-- Heatmap -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 12px">
-                        <div>
-                            <div class="card-title">4 week activity</div>
-                            <div class="card-sub" id="focusGoalNote"></div>
-                        </div>
-                    </div>
-
-                    <div class="heat-grid" id="heatGrid"></div>
-
-                    <div class="legend">
-                        <div><i style="background: var(--surface-3)"></i> None</div>
-                        <div><i style="background: #c7d2fe"></i> Light</div>
-                        <div><i style="background: var(--brand)"></i> Goal met</div>
-                        <div><i style="background: var(--accent)"></i> Double</div>
-                    </div>
-                </section>
-
-            </div>
-
-            <!-- ---------- RIGHT COLUMN ---------- -->
-            <div class="dash-col">
-
-                <!-- Pomodoro -->
-                <section class="card pomo" id="pomoCard">
-
-                    <div class="row-between">
-                        <span class="badge" id="pomoModeLabel">Focus</span>
-                        <button class="icon-btn" id="pomoSettingsBtn" type="button" aria-label="Timer settings"
-                            title="Timer settings">⚙️</button>
-                    </div>
-
+            <!-- ================= POMODORO ================= -->
+            <section class="card c5" id="pomoCard">
+                <h4>Focus Pomodoro <span class="link" id="pomoHeadNote">Session</span></h4>
+                <div class="pomo">
                     <div class="pomo-ring" id="pomoRing">
                         <div class="pomo-time" id="pomoTime">25:00</div>
                     </div>
-
-                    <div class="pomo-task" id="pomoTaskLabel">No task selected</div>
-
-                    <div class="pomo-modes">
-                        <button type="button" data-mode="focus" class="active">Focus</button>
-                        <button type="button" data-mode="short">Short</button>
-                        <button type="button" data-mode="long">Long</button>
-                    </div>
-
-                    <div class="field" style="text-align: left; margin-bottom: 14px">
-                        <label for="pomoTaskSelect">Working on</label>
-                        <select class="select" id="pomoTaskSelect"></select>
-                    </div>
-
-                    <div class="pomo-controls">
-                        <button class="primary-btn btn-sm" id="pomoStart" type="button">▶ Start</button>
-                        <button class="secondary-btn btn-sm" id="pomoPause" type="button">⏸ Pause</button>
-                        <button class="ghost-btn btn-sm" id="pomoReset" type="button">↺ Reset</button>
-                        <button class="ghost-btn btn-sm" id="pomoSkip" type="button">⏭ Skip</button>
-                    </div>
-
-                    <div class="pomo-stats">
-                        <div>
-                            <strong id="pomoStatToday">0m</strong>
-                            <small>Today</small>
+                    <div class="pomo-side">
+                        <div class="pomo-head">
+                            <span class="badge" id="pomoModeLabel">Focus</span>
+                            <button class="icon-btn" id="pomoSettingsBtn" type="button" aria-label="Timer settings"
+                                title="Timer settings">⚙️</button>
                         </div>
-                        <div>
-                            <strong id="pomoStatSessions">0</strong>
-                            <small>Sessions</small>
+
+                        <div class="row">
+                            <span>Today's sessions</span>
+                            <span class="sdots" id="pomoDots" aria-hidden="true"></span>
                         </div>
-                        <div>
-                            <strong id="pomoStatStreak">0d</strong>
-                            <small>Streak</small>
+
+                        <div class="nextup">
+                            <span class="ico">⚡</span>
+                            <span>
+                                <span class="t" id="pomoNextTitle">Focus session</span><br>
+                                <span class="d" id="pomoTaskLabel">No task selected</span>
+                            </span>
                         </div>
-                        <div>
-                            <strong id="pomoRound">0</strong>
-                            <small>Round</small>
+
+                        <div class="pomo-modes">
+                            <button type="button" data-mode="focus" class="active">Focus</button>
+                            <button type="button" data-mode="short">Short</button>
+                            <button type="button" data-mode="long">Long</button>
+                        </div>
+
+                        <div class="field">
+                            <label for="pomoTaskSelect">Working on</label>
+                            <select class="select" id="pomoTaskSelect"></select>
+                        </div>
+
+                        <div class="pomo-controls">
+                            <button class="btn primary" id="pomoStart" type="button">▶ Start</button>
+                            <button class="btn" id="pomoPause" type="button">⏸ Pause</button>
+                            <button class="btn" id="pomoReset" type="button">↺ Reset</button>
+                            <button class="btn" id="pomoSkip" type="button">⏭ Skip</button>
+                        </div>
+
+                        <div class="pomo-stats">
+                            <div>
+                                <strong id="pomoStatToday">0m</strong>
+                                <small>Today</small>
+                            </div>
+                            <div>
+                                <strong id="pomoStatSessions">0</strong>
+                                <small>Sessions</small>
+                            </div>
+                            <div>
+                                <strong id="pomoStatStreak">0d</strong>
+                                <small>Streak</small>
+                            </div>
+                            <div>
+                                <strong id="pomoRound">0</strong>
+                                <small>Round</small>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </section>
 
-                    <p class="hint" style="margin-top: 14px">Tip: press <kbd>Space</kbd> to start or pause.</p>
+            <!-- ============ RIGHT BLOCK: sits beside Pomodoro, fills to the same bottom ============ -->
+            <div class="du-right c7">
+
+                <!-- WEEKLY BAR CHART -->
+                <section class="card">
+                    <h4>Weekly Activity <span class="link" id="weekNote">—</span></h4>
+                    <div class="bars" id="weekBars"></div>
                 </section>
 
-                <!-- Goals snapshot -->
+                <!-- STUDY STREAK -->
                 <section class="card">
-                    <div class="row-between" style="margin-bottom: 10px">
-                        <div>
-                            <div class="card-title">Goals in progress</div>
-                            <div class="card-sub">Nearest deadline first</div>
-                        </div>
+                    <h4>Study Streak <span class="link" id="streakLink">—</span></h4>
+                    <div class="streak-top">
+                        <span class="flame-ico" aria-hidden="true">🔥</span>
+                        <span>
+                            <div class="streak-num num" id="streakNum">0</div>
+                            <div class="streak-sub" id="streakSub">days in a row</div>
+                        </span>
                     </div>
-
-                    <div id="goalSnapshot"></div>
-                </section>
-
-                <!-- Exams -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 12px">
-                        <div>
-                            <div class="card-title">Upcoming exams</div>
-                            <div class="card-sub">Countdown in days</div>
-                        </div>
-                    </div>
-
-                    <div class="row-wrap" id="examStrip"></div>
-                </section>
-
-                <!-- Donut -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 14px">
-                        <div>
-                            <div class="card-title">Task status</div>
-                            <div class="card-sub">Done vs pending vs late</div>
-                        </div>
-                    </div>
-
-                    <div class="donut-layout" id="taskDonut"></div>
-                </section>
-
-                <!-- Focus trend -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 12px">
-                        <div>
-                            <div class="card-title">Focus trend</div>
-                            <div class="card-sub" id="trendNote">Minutes studied per day</div>
-                        </div>
-
-                        <div class="chip-row" role="group" aria-label="Trend range">
-                            <button class="chip" type="button" data-trend="7">7d</button>
-                            <button class="chip active" type="button" data-trend="14">14d</button>
-                            <button class="chip" type="button" data-trend="30">30d</button>
-                        </div>
-                    </div>
-
-                    <div class="chart-box" id="trendChart"></div>
-                </section>
-
-                <!-- Best hours -->
-                <section class="card">
-                    <div class="row-between" style="margin-bottom: 12px">
-                        <div>
-                            <div class="card-title">When you focus best</div>
-                            <div class="card-sub" id="bestHoursNote">Focus sessions by hour of day</div>
-                        </div>
-                    </div>
-
-                    <div class="hour-grid" id="hourChart"></div>
-
-                    <div class="legend">
-                        <div><i style="background: var(--surface-3)"></i> None</div>
-                        <div><i style="background: #c7d2fe"></i> Light</div>
-                        <div><i style="background: var(--brand)"></i> Solid</div>
-                        <div><i style="background: var(--accent)"></i> Peak</div>
+                    <div class="week" id="streakWeek" aria-label="Study days this week"></div>
+                    <div class="streak-row"><span>This week</span><b class="num" id="streakWeekCount">0 / 7</b></div>
+                    <div class="streak-row"><span>Personal best</span><b class="num" id="streakBest">0 days</b></div>
+                    <div class="mstone">
+                        <span class="lbl"><span id="streakNextLabel">Next badge</span><b class="num"
+                                id="streakNextVal">—</b></span>
+                        <span class="mbar"><i id="streakBar"></i></span>
                     </div>
                 </section>
 
-                <!-- Subject split -->
+                <!-- UPCOMING EXAMS -->
                 <section class="card">
-                    <div class="row-between" style="margin-bottom: 12px">
-                        <div>
-                            <div class="card-title">Focus by subject</div>
-                            <div class="card-sub">Share of your logged study time</div>
-                        </div>
-                    </div>
+                    <h4>Upcoming Exams <span class="link"><a href="study-plan.html">View all</a></span></h4>
+                    <div id="examList"></div>
+                </section>
 
-                    <div class="split-list" id="subjectSplit"></div>
+                <!-- AI INSIGHTS -->
+                <section class="card">
+                    <h4>AI Insights <span class="link">✨ New</span></h4>
+                    <div class="tip card" style="padding:14px;margin-bottom:8px;box-shadow:none">
+                        <span class="spark-ico" aria-hidden="true">💡</span>
+                        <span>
+                            <span class="t">Smart Tip</span><br>
+                            <span class="d" id="tipText">Loading…</span>
+                        </span>
+                    </div>
+                    <div id="insightList"></div>
+                    <a class="btn" id="tipBtn" href="assistant.html" style="margin-top:10px">Open assistant ✨</a>
                 </section>
 
             </div>
 
-        </div>
+            <!-- ================= KANBAN (full width) ================= -->
+            <section class="card c12">
+                <h4>Task Board <span class="link"><a href="tasks.html">＋ Add</a></span></h4>
+                <div class="kan">
+                    <div class="col">
+                        <h5><i style="background:#f87171"></i>To Do <span class="du-count" id="countTodo">0</span></h5>
+                        <div id="boardTodo"></div>
+                    </div>
+                    <div class="col">
+                        <h5><i style="background:#fbbf24"></i>Doing <span class="du-count" id="countDoing">0</span></h5>
+                        <div id="boardDoing"></div>
+                    </div>
+                    <div class="col">
+                        <h5><i style="background:#34d399"></i>Done <span class="du-count" id="countDone">0</span></h5>
+                        <div id="boardDone"></div>
+                    </div>
+                </div>
+            </section>
 
+            <!-- ================= HEATMAP (full width) ================= -->
+            <section class="card c12">
+                <h4>Study Consistency — last 6 months <span class="link" id="heatNote">—</span></h4>
+                <div class="heat" id="heatHome"></div>
+                <div class="heatlegend">
+                    <span>Less</span>
+                    <i style="background:var(--chip)"></i>
+                    <i style="background:color-mix(in srgb,#6366f1 30%,transparent)"></i>
+                    <i style="background:color-mix(in srgb,#6366f1 55%,transparent)"></i>
+                    <i style="background:linear-gradient(140deg,#6366f1,#8b5cf6)"></i>
+                    <i style="background:linear-gradient(140deg,#8b5cf6,#34d399)"></i>
+                    <span>More</span>
+                </div>
+            </section>
+
+            <!-- ================= SUBJECT RINGS ================= -->
+            <section class="card c12">
+                <h4><span id="subjRingsCount">8</span> Subjects — Mastery Rings <span class="link" id="subjNote">Overall —</span></h4>
+                <div class="subj" id="subjGrid"></div>
+            </section>
+
+        </div>
     </main>
 
 
@@ -377,21 +363,8 @@
     </div>
 
 
-    <!-- ================= FOOTER ================= -->
-    <footer>
-        <div class="logo">📚 Smart Study</div>
-        <p>Organize. Focus. Achieve.</p>
-        <div class="footer-links">
-            <a href="tasks.html">Tasks</a>
-            <a href="notes.html">Notes</a>
-            <a href="study-plan.html">Study Plan</a>
-            <a href="goals.html">Goals</a>
-            <a href="assistant.html">Assistant</a>
-            <a href="quiz.html">Quiz</a>
-            <a href="settings.html">Settings</a>
-        </div>
-        <p class="copyright">© <span data-year>2026</span> Smart Study. All rights reserved.</p>
-    </footer>
+    <!-- ================= ASK AI FAB ================= -->
+    <a class="fab" href="assistant.html">✨ Ask AI</a>
 
 
     <script src="js/storage.js"></script>

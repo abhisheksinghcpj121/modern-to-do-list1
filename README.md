@@ -24,6 +24,7 @@ stays in that browser's `localStorage`, scoped per account.
 | **AI Quiz** | Subject-wise and chapter-wise practice quizzes — AI-written questions, or offline MCQs built from your own notes. Instant grading with explanations and a saved, per-subject history |
 | **Analytics** | Charts built from pure CSS `conic-gradient` — zero chart libraries |
 | **Settings** | Profile, appearance (light/dark), focus timer defaults, export/import backup, account wipe |
+| **Node backend** | Real accounts (scrypt-hashed passwords + bearer-token sessions), per-user data sync over a small REST API, and static hosting — all with **zero npm dependencies** |
 | **Themes & motion** | CSS token system with a dark mode toggle and a shared motion/micro-animation system |
 
 ### 🤖 Study Assistant — three modes
@@ -47,34 +48,108 @@ The **Quiz** page turns a subject + chapter (+ optional topic) into a practice q
   note lines (`Term: definition`, `X is what…`), plus fill-in-the-blank fallbacks — no network.
 - Every question is auto-graded; the score, correct answers and one-line explanations are shown,
   and each attempt is saved to a history grouped subject-wise and chapter-wise.
-- **Your own subject shelf** — subjects are editable right on the Quiz page ("⚙️ Manage subjects"):
-  add or delete any subject by hand; the list is saved per account and starts from a built-in set
-  of your own subjects. "Reset to defaults" restores that built-in set at any time.
+- **One shared subject shelf** — you start with your own built-in subjects (DBMS, Web Technology,
+  DAA, Compiler Design, Application of Soft Computing, Constitution of India, Computer Graphics,
+  Image Processing). The *same* shelf feeds the Study Plan hour targets, the weekly timetable
+  dropdown, the Tasks subject dropdown and the Quiz page, so a subject is added exactly once and
+  shows up everywhere. Edit it anywhere ("⚙️ Manage subjects" on Quiz, "⋯ Manage subjects" on
+  Study Plan); "Reset to defaults" restores the built-in set at any time.
 
 ---
 
 ## 🛡️ Privacy & security
 
-- **Client-side demo auth** — passwords are salted + hashed before storage, but this is
-  **not real security**. A production deployment needs a real backend with server-side
-  sessions. Treat the accounts as per-device profiles.
+- **Server accounts** — with the Node backend running, signup/login create a real account on
+  the server: passwords are hashed with `scrypt` + a per-user salt, sessions are random bearer
+  tokens with a **30-day lifetime and a 30-minute idle window** (leave the tab alone for half
+  an hour — or log out from another device — and this one steps down to the login screen).
+  Still demo-grade: there is no HTTPS or rate limiting, so run it on localhost/LAN, not on
+  the open internet.
+- **Works offline too** — if the server is unreachable (or you opened the files over `file://`),
+  the old local-only accounts kick in automatically and nothing breaks; sync resumes at the
+  next login.
 - **Per-user namespacing** — data is stored as `smartStudy:<email>:<collection>`, so two
   accounts on one browser never mix.
 - **AI key handling** — the key is stored only in your browser, is sent only to the provider
-  you pick, and is **never included in exports/backups**. Exports carry chat history and all
-  study data, but never the key.
+  you pick, and is **never included in exports/backups or server sync**. Exports carry chat
+  history and all study data, but never the key.
 - **XSS-safe rendering** — user data (and AI markdown) is always rendered via `textContent`
-  and DOM APIs, never `innerHTML`.
+  and DOM APIs, never `innerHTML`. The static server refuses to serve its own `server/`
+  folder and blocks path traversal.
+
+---
+
+## 🖥️ Backend (Node, zero dependencies)
+
+One process serves the whole app — the static site *and* its API — using only Node built-ins
+(`node:http`, `node:sqlite`, `node:crypto`). No `npm install` needed.
+
+```bash
+node server/server.js          # or: npm start
+# App : http://localhost:3000
+# API : http://localhost:3000/api
+# Data: server/data/smartstudy.db   (SQLite, created on first run)
+```
+
+| Method | Route | What it does |
+| --- | --- | --- |
+| `POST` | `/api/auth/signup` | Create an account → `{token, user}` |
+| `POST` | `/api/auth/login` | Verify + start a session → `{token, user}` |
+| `POST` | `/api/auth/logout` | End the current session |
+| `GET` | `/api/auth/me` | The signed-in user |
+| `PATCH` | `/api/auth/me` | Update name, theme, or password (`{current, next}`) |
+| `GET` | `/api/data` | Every collection for the signed-in user |
+| `PUT` | `/api/data/:name` | Replace one collection (tasks, notes, …) |
+| `DELETE` | `/api/data` | Wipe every collection (Settings → Erase all data) |
+
+**Sessions** are real server-side sessions, not just tokens that live forever: each has a
+30-day absolute lifetime *and* a 30-minute idle window (`lastSeen` is refreshed by the tab's
+once-a-minute heartbeat and every write). An expired or idle session returns `401` and the
+app quietly offers the login screen. The TTL and idle window can be tuned with
+`SMART_STUDY_SESSION_IDLE_MS`.
+
+**Admin console** — `http://localhost:3000/admin.html` shows every account, its storage
+footprint, live sessions and last activity, and lets the operator reset a password, delete
+an account (with its sessions and data), or sweep expired sessions. It is protected by an
+**admin key**, not a user login: the key lives in `server/data/admin.key`, written on the
+first boot and printed in the server console on every start, so it stays the same forever.
+`SMART_STUDY_ADMIN_KEY` overrides it when set. The key is
+sent as the `x-admin-key` header and checked in constant time; it lives in the browser tab's
+`sessionStorage` only (Lock forgets it).
+
+| Method | Route | What it does |
+| --- | --- | --- |
+| `GET` | `/api/admin/stats` | Accounts, live sessions, stored bytes, uptime |
+| `GET` | `/api/admin/users` | Every account with its footprint |
+| `GET` | `/api/admin/users/:email` | One account: collections, sizes, sessions |
+| `POST` | `/api/admin/users/:email/password` | Reset a password (signs out every device) |
+| `DELETE` | `/api/admin/users/:email` | Delete an account + all of its server data |
+| `POST` | `/api/admin/cleanup` | Sweep expired sessions |
+
+**How the frontend uses it** — `localStorage` stays the source of truth the pages read, so
+every page keeps its synchronous Store API. Writes are mirrored to the server in the
+background (~0.4 s after you stop typing), and a pull on login/page start brings in anything
+saved on another tab or device (the page reloads once if it was behind). Guests never touch
+the server.
+
+**Tests** — `node server/test.js` (with the server running) exercises the whole stack: API,
+static serving, path traversal, and the real `storage.js` + `auth.js` running against a live
+server from a fake browser sandbox.
 
 ---
 
 ## 🧱 Tech stack
 
-- 100% static: **HTML + CSS + vanilla JS**, no frameworks, no build step, no `<script src>` CDNs
-- `localStorage` as the data store, with a thin namespaced wrapper and corrupt-data recovery
+- Frontend: **HTML + CSS + vanilla JS** — no frameworks, no build step, no `<script src>` CDNs
+- Backend: **plain Node** (`node:http` + `node:sqlite` + `node:crypto`) — no npm packages at all
+- `localStorage` as the offline-first data store, with a thin namespaced wrapper, corrupt-data
+  recovery and background sync to the server
 - Automatic one-time migration from the app's former `studySync:` key prefix
 - CSS custom-property tokens for theme + motion; charts are CSS/SVG only
-- Works from `file://` or any static host (a local server is recommended)
+- Runs from `http://localhost:3000` (recommended) or straight from `file://` with no sync
+- Static preview works too: a VS Code **Live Server** (or any other port) page still reaches the
+  backend on `http://localhost:3000`, so accounts, sync, the admin console and the AI assistant
+  keep working — just start `node server/server.js` alongside it. Nothing to configure.
 
 ---
 
@@ -92,12 +167,23 @@ smart study/
 ├── settings.html               Profile, theme, backups, AI key
 ├── assistant.html              AI study assistant chat
 ├── quiz.html                   AI quiz generator (subject/chapter-wise, offline fallback)
-├── preview.html                Dev-only visual wireframe map of every screen (noindex; safe to delete)
+├── admin.html                  Server admin console (accounts, sessions, cleanup)
+├── package.json                Scripts only (start / test) - no dependencies
+├── server/
+│   ├── server.js               Entry point: static files + API on one port
+│   ├── api.js                  REST routes (auth + data sync + admin mount)
+│   ├── admin.js                Admin API (key-protected ops routes)
+│   ├── auth.js                 scrypt hashing, bearer tokens, session policy
+│   ├── db.js                   node:sqlite tables (users, sessions, data)
+│   ├── static.js               Static file serving (MIME, traversal guard)
+│   ├── test.js                 64-check end-to-end test suite
+│   └── data/                   SQLite file lives here (created on first run)
 ├── css/
 │   ├── style.css               Design tokens, core components, motion
-│   └── pages.css               Page-specific layouts
+│   ├── pages.css               Page-specific layouts
+│   └── dashboard-premium.css   Premium dashboard layout (loaded by dashboard.html)
 ├── js/
-│   ├── storage.js              Namespaced localStorage wrapper + export/import
+│   ├── storage.js              Namespaced localStorage wrapper + export/import + server sync
 │   ├── models.js               Shared CRUD layer for every collection
 │   ├── ui.js                   DOM helpers, toasts, modals, theme, date utils
 │   ├── auth.js                 Accounts, sessions, hashing, guest mode
@@ -105,6 +191,7 @@ smart study/
 │   ├── ai.js                   AI engine: providers, streaming, retrieval, markdown
 │   ├── assistant.js            Assistant page wiring (chat, quick actions)
 │   ├── quiz.js                 AI quiz generator + offline question builder
+│   ├── admin.js                Admin console page logic
 │   ├── landing.js              Landing hero behaviour
 │   ├── authpage.js             Login/signup form logic
 │   ├── dashboard.js            Dashboard aggregation + stats
@@ -115,22 +202,25 @@ smart study/
 │   ├── studyplan.js            Study plan page
 │   ├── charts.js               Dependency-free chart helpers
 │   └── settings.js             Settings page
-└── archive/                    Old versions kept for reference (not loaded)
 ```
 
 ---
 
 ## ▶️ Running it
 
-Open `index.html` directly in a browser, or serve the folder (recommended):
+**Recommended — with the backend** (accounts + sync across tabs/devices):
 
 ```bash
-# any of these work
-npx serve .
-python -m http.server 8080
+node server/server.js        # or: npm start
 ```
 
-Visit `http://localhost:8080`, sign up (or continue as guest), and you're in.
+Visit `http://localhost:3000`, sign up (or continue as guest), and you're in.
+Everything is stored in `server/data/smartstudy.db`.
+
+**No-backend mode** still works exactly as before — open `index.html` directly or serve the
+folder with anything (`python -m http.server 8080`, `npx serve .`). Accounts then live only
+in that browser's `localStorage`, and the app quietly falls back to them whenever the server
+is unreachable.
 
 ---
 
@@ -142,9 +232,14 @@ Visit `http://localhost:8080`, sign up (or continue as guest), and you're in.
 
 ## 🔒 Known limits
 
-- Accounts are local demo profiles — there is no cloud sync and no real server-side security.
 - The free AI endpoint is public, rate-limited and may occasionally be slow or unavailable.
-- All data is tied to one browser's `localStorage` — clear site data and it's gone unless exported.
+- No HTTPS or rate limiting on the Node server — run it on localhost/LAN, put a reverse
+  proxy (Caddy/nginx) in front before exposing it to the internet.
+- Passwords are hashed with scrypt, but sessions are plain bearer tokens in a local SQLite
+  file — fine for a class project, not for production.
+- Sync is last-write-wins per collection: two devices editing the *same* collection
+  simultaneously keep whichever write lands last (each collection syncs as a whole).
+- Clearing `localStorage` or deleting `server/data/` loses data unless you exported a backup.
 
 ---
 

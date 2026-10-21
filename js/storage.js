@@ -16,7 +16,7 @@
     var USERS_KEY = NS + ":users";
 
     var SETTINGS_DEFAULTS = {
-        theme: "light",
+        theme: "dark",
         focus: 25,
         shortBreak: 5,
         longBreak: 15,
@@ -33,6 +33,11 @@
        the key has no business travelling with it.
     */
     var EXPORT_SKIP = ["ai"];
+
+    /* ...and the same rule for server sync: the key stays local. */
+    var SYNC_SKIP = ["ai"];
+
+    var SYNC_DELAY = 400;   /* ms of quiet before a changed collection is pushed */
 
 
     /* ---------- raw guards ---------- */
@@ -163,6 +168,221 @@
     }
 
 
+    /* =========================================
+       SERVER SYNC
+       localStorage stays the source of truth the
+       pages read (the Store API is synchronous
+       and every page depends on that). Writes
+       are mirrored to the Node backend in the
+       background; a pull on login/page start
+       brings in anything saved elsewhere.
+
+       No server / guest mode? Nothing here runs
+       and the app behaves exactly as before.
+       ========================================= */
+
+    var syncTimer = null;
+    var pending = {};
+    var suppress = false;   /* true while a server pull is being applied */
+    var stateListener = null;   /* UI hook: "syncing" | "synced" | "offline" */
+
+    function report(state) {
+        if (stateListener) { stateListener(state); }
+    }
+
+    function currentToken() {
+        var s = readJSON(SESSION_KEY, null);
+        return s && !s.guest && s.token ? s.token : null;
+    }
+
+    /* The site can be previewed from a static server - VS Code Live Server,
+       or a plain file:// open - while the API only runs on the app's own
+       Node server. A relative /api path would then hit the preview server
+       and 404, so send it to the backend on port 3000 instead. When the
+       app is served by that backend itself the path stays relative, which
+       keeps LAN access working exactly as before. */
+    function apiOrigin() {
+
+        var here = global.location || {};
+        var port = String(here.port || "");
+        var protocol = String(here.protocol || "");
+        var host = String(here.hostname || "");
+
+        if (port === "3000") { return ""; }
+        if (protocol === "file:") { return "http://localhost:3000"; }
+
+        /* same host as the page, so a LAN preview still finds the backend */
+        if (!host) { return ""; }
+
+        return (protocol === "https:" ? "https:" : "http:") + "//" + host + ":3000";
+    }
+
+    /* One JSON call to the backend. Rejects with {status, message}. */
+    function api(method, path, body) {
+
+        var headers = { "Content-Type": "application/json" };
+        var token = currentToken();
+
+        if (token) { headers.Authorization = "Bearer " + token; }
+
+        return fetch(apiOrigin() + path, {
+            method: method,
+            headers: headers,
+            body: body === undefined ? null : JSON.stringify(body)
+        }).then(function (res) {
+            return res.json()
+                .catch(function () { return null; })
+                .then(function (data) {
+                    if (!res.ok) {
+                        throw {
+                            status: res.status,
+                            message: (data && data.error) || "The server said no."
+                        };
+                    }
+                    return data;
+                });
+        });
+    }
+
+    function queueSync(name) {
+
+        if (suppress || SYNC_SKIP.indexOf(name) !== -1) { return; }
+        if (!currentToken()) { return; }
+
+        pending[name] = true;
+
+        report("syncing");
+
+        if (syncTimer) { clearTimeout(syncTimer); }
+        syncTimer = setTimeout(flushSync, SYNC_DELAY);
+    }
+
+    /* Push every queued collection. keepalive=true survives a page unload. */
+    function flushSync(keepalive) {
+
+        if (syncTimer) { clearTimeout(syncTimer); }
+        syncTimer = null;
+
+        var token = currentToken();
+
+        if (!token) { pending = {}; return; }
+
+        Object.keys(pending).forEach(function (name) {
+
+            if (!pending[name]) { return; }
+            pending[name] = false;
+
+            var value = readJSON(scopeKey(name), null);
+
+            fetch(apiOrigin() + "/api/data/" + encodeURIComponent(name), {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token
+                },
+                body: JSON.stringify(value === null ? [] : value),
+                keepalive: Boolean(keepalive)
+            }).then(function (res) {
+                report(res.ok ? "synced" : "offline");
+            }).catch(function () {
+                report("offline");   /* offline - the next write tries again */
+            });
+        });
+    }
+
+    function collectionNames() {
+        var prefix = NS + ":" + currentUserKey() + ":";
+
+        return Store.myKeys().map(function (k) {
+            return k.slice(prefix.length);
+        }).filter(function (name) {
+            return SYNC_SKIP.indexOf(name) === -1;
+        });
+    }
+
+    /* First login / signup: send everything this device has. */
+    function pushAll() {
+        collectionNames().forEach(function (name) { pending[name] = true; });
+        flushSync();
+    }
+
+    /* Fetch the server copy and apply it locally. Resolves to true when
+       anything on this device actually changed. */
+    function pull() {
+
+        if (!currentToken()) { return Promise.resolve(false); }
+
+        return api("GET", "/api/data").then(function (data) {
+
+            var changed = false;
+
+            suppress = true;
+
+            try {
+                Object.keys(data.collections || {}).forEach(function (name) {
+
+                    if (SYNC_SKIP.indexOf(name) !== -1) { return; }
+
+                    var incoming = data.collections[name];
+                    var local = readJSON(scopeKey(name), null);
+
+                    if (JSON.stringify(local) !== JSON.stringify(incoming)) {
+                        writeJSON(scopeKey(name), incoming);
+                        changed = true;
+                    }
+                });
+            } finally {
+                suppress = false;
+            }
+
+            report("synced");
+
+            return changed;
+
+        }).catch(function (err) {
+
+            report("offline");
+
+            /* an expired token should not spam the console - quietly fall
+               back to device-only mode until the next login */
+            if (err && err.status === 401) {
+                var s = readJSON(SESSION_KEY, null);
+                if (s) { writeJSON(SESSION_KEY, Object.assign({}, s, { token: null })); }
+            }
+
+            return false;
+        });
+    }
+
+    /* Cheap reachability check for the UI status chip. */
+    function probe() {
+
+        if (!currentToken()) { return Promise.resolve(false); }
+
+        return api("GET", "/api/auth/me").then(function () {
+            return true;
+        }, function () {
+            return false;
+        });
+    }
+
+    /* Wipe the server copy too (Settings -> Erase all data). */
+    function wipeRemote() {
+        if (!currentToken()) { return; }
+        api("DELETE", "/api/data").catch(function () { /* offline: nothing to wipe */ });
+    }
+
+    /* Anything still queued should still reach the server when the tab
+       closes, otherwise the last few seconds of work would be lost. */
+    if (global.addEventListener) {
+        global.addEventListener("beforeunload", function () {
+            if (Object.keys(pending).some(function (k) { return pending[k]; })) {
+                flushSync(true);
+            }
+        });
+    }
+
+
     /* ---------- public API ---------- */
 
     var Store = {
@@ -173,7 +393,9 @@
         },
 
         set: function (name, value) {
-            return writeJSON(scopeKey(name), value);
+            var ok = writeJSON(scopeKey(name), value);
+            if (ok) { queueSync(name); }
+            return ok;
         },
 
         remove: function (name) {
@@ -318,6 +540,24 @@
             for (i = 0; i < keys.length; i++) {
                 rawDel(keys[i]);
             }
+
+            wipeRemote();
+        },
+
+        /* Backend access for the auth + settings scripts */
+        api: api,
+
+        /* Where /api lives: "" when this page is served by that backend,
+           otherwise the port-3000 origin (Live Server, file://). */
+        apiOrigin: apiOrigin,
+
+        sync: {
+            pushAll: pushAll,
+            pull: pull,
+            flush: flushSync,
+            probe: probe,
+            onState: function (fn) { stateListener = fn; },
+            isSyncedAccount: function () { return Boolean(currentToken()); }
         },
 
         uid: function () {

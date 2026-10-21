@@ -7,6 +7,7 @@
 /* ---------- DESIGN TOKENS ---------- */
 
 :root {
+    color-scheme: light;
 
     /* Brand */
     --brand: #4f46e5;
@@ -74,8 +75,6 @@
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     /* Accelerating curve for exits. */
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
-    /* Slight overshoot, for things that should feel tactile. */
-    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 /* Reduced motion: collapse durations rather than removing transitions,
@@ -92,32 +91,35 @@
 }
 
 html[data-theme="dark"] {
+    color-scheme: dark;
 
-    --brand-soft: #1c2547;
-    --brand-soft-2: #273166;
+    /* Concept shell: deep midnight + translucent glass surfaces.
+       brand-soft doubles as the aurora glow in the page background. */
+    --brand-soft: rgba(99, 102, 241, 0.20);
+    --brand-soft-2: rgba(167, 139, 250, 0.16);
 
-    --ok-soft: #063a2c;
-    --warn-soft: #3d2f0a;
-    --danger-soft: #45151a;
-    --info-soft: #0d2a4d;
+    --ok-soft: rgba(16, 185, 129, 0.16);
+    --warn-soft: rgba(245, 158, 11, 0.16);
+    --danger-soft: rgba(239, 68, 68, 0.16);
+    --info-soft: rgba(59, 130, 246, 0.16);
 
-    --bg: #0b1220;
-    --surface: #111a2e;
-    --surface-2: #16203a;
-    --surface-3: #1d2942;
+    --bg: #0b1020;
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-2: rgba(255, 255, 255, 0.07);
+    --surface-3: rgba(255, 255, 255, 0.11);
 
-    --text: #e8edf7;
-    --text-2: #b6c2d9;
-    --muted: #7c8aa5;
+    --text: #e8ecf8;
+    --text-2: #aab3cc;
+    --muted: #727c99;
 
-    --border: #24304d;
-    --border-2: #2f3c5e;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-2: rgba(255, 255, 255, 0.15);
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 10px rgba(0, 0, 0, 0.3);
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.45);
-    --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.55), 0 30px 70px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 22px 55px rgba(0, 0, 0, 0.55);
 
-    --ring: 0 0 0 3px rgba(99, 102, 241, 0.28);
+    --ring: 0 0 0 3px rgba(99, 102, 241, 0.32);
 }
 
 
@@ -222,12 +224,6 @@ ol {
    UTILITIES
    ========================================= */
 
-.container {
-    max-width: var(--max);
-    margin-inline: auto;
-    padding-inline: 24px;
-}
-
 .hidden {
     display: none !important;
 }
@@ -241,14 +237,9 @@ ol {
     white-space: nowrap;
 }
 
-.text-center { text-align: center; }
 .text-muted { color: var(--muted); }
 .text-sm { font-size: 13px; }
 .text-xs { font-size: 12px; }
-.text-lg { font-size: 18px; }
-.text-brand { color: var(--brand); }
-.text-ok { color: var(--ok); }
-.text-warn { color: var(--warn); }
 .text-danger { color: var(--danger); }
 
 .row {
@@ -283,7 +274,6 @@ ol {
     gap: 18px;
 }
 
-.mt-auto { margin-top: auto; }
 .full { width: 100%; }
 
 
@@ -360,15 +350,25 @@ ol {
     height: 40px;
     display: grid;
     place-items: center;
-    border-radius: var(--r-sm);
+    border-radius: 10px;
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--surface-2);
     font-size: 16px;
 }
 
 .icon-btn:hover {
     background: var(--brand-soft);
     border-color: var(--brand-soft-2);
+}
+
+/* the logout control carries a word, not a glyph - let it size to fit */
+.icon-btn[data-logout] {
+    width: auto;
+    padding: 0 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
 }
 
 /* ---------- global search ---------- */
@@ -533,24 +533,28 @@ ol {
 }
 
 .primary-btn {
-    background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+    background: linear-gradient(135deg, var(--brand), var(--accent));
     color: #fff;
-    border: 2px solid var(--brand);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 18px rgba(79, 70, 229, 0.26);
+    border: 2px solid transparent;
+    box-shadow: 0 8px 22px rgba(79, 70, 229, 0.38);
 }
 
 .primary-btn:hover {
-    background: linear-gradient(180deg, var(--brand-strong), var(--brand-strong));
-    border-color: var(--brand-strong);
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1), 0 12px 26px rgba(79, 70, 229, 0.34);
+    background: linear-gradient(135deg, var(--brand-strong), var(--accent));
+    border-color: transparent;
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.5);
     transform: translateY(-2px);
 }
 
 .secondary-btn {
-    background: var(--surface);
+    background: var(--surface-2);
     color: var(--brand);
     border: 2px solid var(--border-2);
     box-shadow: var(--shadow-sm);
+}
+
+html[data-theme="dark"] .secondary-btn {
+    color: var(--text);
 }
 
 .secondary-btn:hover {
@@ -659,6 +663,19 @@ ol {
     padding-right: 36px;
 }
 
+/* The open dropdown list gets its own solid colours. Browsers draw
+   options on their own background unless told otherwise, which turns
+   into unreadable light-on-white text when the page theme is dark. */
+.select option,
+.select optgroup {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+.select option:checked {
+    color: var(--text);
+}
+
 .hint {
     font-size: 12px;
     color: var(--muted);
@@ -732,11 +749,33 @@ button.chip:hover {
     color: var(--brand);
 }
 
+/* the admin quick link in the navbar is a chip too */
+a.chip:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+
 .chip.active {
     background: var(--brand);
     border-color: var(--brand);
     color: #fff;
 }
+
+/* sync status chip in the navbar */
+.chip.ok {
+    background: var(--ok-soft);
+    border-color: transparent;
+    color: #047857;
+}
+
+.chip.warn {
+    background: var(--warn-soft);
+    border-color: transparent;
+    color: #b45309;
+}
+
+html[data-theme="dark"] .chip.ok { color: var(--ok); }
+html[data-theme="dark"] .chip.warn { color: var(--warn); }
 
 .pill {
     display: inline-flex;
@@ -748,7 +787,6 @@ button.chip:hover {
     font-weight: 700;
 }
 
-.pill-high { background: var(--danger-soft); color: var(--danger); }
 .pill-medium { background: var(--warn-soft); color: #b45309; }
 .pill-low { background: var(--info-soft); color: var(--info); }
 
@@ -915,6 +953,8 @@ html[data-theme="dark"] .pill-ok { color: var(--ok); }
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.3);
     animation: modalOpen var(--dur) var(--ease-out);
     border: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
 }
 
 .modal-content.wide {
@@ -992,6 +1032,8 @@ html[data-theme="dark"] .pill-ok { color: var(--ok); }
     font-weight: 600;
     animation: toastIn var(--dur) var(--ease-out);
     pointer-events: auto;
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
 }
 
 .toast.out {
@@ -1133,16 +1175,6 @@ button:not(:disabled):active,
    ANIMATIONS
    ========================================= */
 
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(18px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-up {
-    animation: fadeUp var(--dur-slower) var(--ease-out) both;
-}
-
-
 /* ---------- Staggered list entrance ----------
    ui.revealOnce() tags children with --reveal-i on the first
    render only. Replaying it on every checkbox toggle feels
@@ -1222,13 +1254,8 @@ button:not(:disabled):active,
     .session:hover,
     .feature-card:hover,
     .stat-card:hover,
-    .reveal-item,
-    .fade-up {
+    .reveal-item {
         transform: none !important;
-    }
-
-    .pulse-soft {
-        animation: none !important;
     }
 }
 
@@ -1277,8 +1304,6 @@ button:not(:disabled):active,
 }
 
 @media (max-width: 560px) {
-
-    .container { padding-inline: 16px; }
 
     .stat-grid { grid-template-columns: 1fr; }
 

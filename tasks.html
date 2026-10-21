@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,9 @@
 
 <body>
 
-    <!-- ================= NAVBAR ================= -->
+    <!-- ================= SIDEBAR ================= -->
+        <!-- ================= SIDEBAR ================= -->
+        <!-- ================= NAVBAR ================= -->
     <header class="navbar">
         <a href="dashboard.html" class="logo"><span>📚</span> Smart Study</a>
 
@@ -31,12 +33,13 @@
         <div class="nav-actions">
             <button class="icon-btn" data-theme-toggle type="button" aria-label="Toggle theme">🌙</button>
             <a href="settings.html" class="icon-btn" aria-label="Settings" title="Settings">⚙️</a>
-            <span class="chip" data-user-name>Student</span>
-            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">↩</button>
+            <span class="chip" data-user-name title="Signed in">Student</span>
+            <button class="icon-btn" data-logout type="button" aria-label="Log out" title="Log out">Logout</button>
             <button class="icon-btn menu-toggle" data-menu-toggle type="button" aria-label="Open menu"
                 aria-expanded="false">☰</button>
         </div>
     </header>
+
 
 
     <main class="page">
@@ -149,7 +152,10 @@
 
                     <div class="field">
                         <label for="fSubject">Subject</label>
-                        <select class="select" id="fSubject"></select>
+                        <div class="row" style="gap: 8px;">
+                            <select class="select" id="fSubject" style="flex: 1;"></select>
+                            <button class="secondary-btn btn-sm" type="button" id="fSubjectAdd">+ Add</button>
+                        </div>
                     </div>
 
                     <div class="field">

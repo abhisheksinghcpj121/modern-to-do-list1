@@ -53,11 +53,33 @@
             saved = {};
         }
 
+        var provider = PROVIDERS[saved.provider] ? saved.provider : CONFIG_DEFAULTS.provider;
+        var key = String(saved.key || "");
+
+        /* A keyed provider with no key cannot answer anything - it is a
+           dead state, so fall back to the keyless default and the app
+           keeps working out of the box. Save a key and the provider
+           choice sticks again. */
+        if (providerNeedsKey(PROVIDERS[provider]) && !key.trim()) {
+            provider = CONFIG_DEFAULTS.provider;
+        }
+
+        var baseUrl = String(saved.baseUrl || "");
+
+        /* The old public endpoint blocks browser requests, so a saved
+           copy of it is dropped - every provider falls back to its own
+           default address instead of a dead one. */
+        if (/pollinations\.ai/i.test(baseUrl)) {
+            baseUrl = "";
+        }
+
         return {
-            provider: saved.provider || CONFIG_DEFAULTS.provider,
+            /* a saved provider id that no longer exists falls back to the
+               default, so an old choice can never point at nothing */
+            provider: provider,
             model: String(saved.model || ""),
-            baseUrl: String(saved.baseUrl || ""),
-            key: String(saved.key || "")
+            baseUrl: baseUrl,
+            key: key
         };
     }
 
@@ -113,17 +135,23 @@
 
     var PROVIDERS = {
 
-        /* Keyless and instant: a public endpoint that speaks the OpenAI
-           chat shape, so the same request builder works. Nothing to sign
-           up for, but it is shared infrastructure - rate-limited, and the
-           prompt (including any of the student's notes) is handled by a
-           third party. That trade-off is spelled out in the UI. */
+        /* Keyless and instant: an OpenAI-shaped chat endpoint, so the same
+           request builder works. Nothing to sign up for, but it is shared
+           infrastructure - rate-limited, and the prompt (including any of
+           the student's notes) is handled by a third party. That trade-off
+           is spelled out in the UI.
+
+           The public endpoint now challenges requests that carry a browser
+           Origin with an anti-bot token, so the page cannot reach it
+           directly. The default base below points at this app's own server,
+           which forwards the call on the page's behalf (see server/api.js).
+           A custom base still works for anyone running their own relay. */
         free: {
             id: "free",
             label: "Free (no key)",
             blurb: "Works instantly with no key. Public and rate-limited — your notes go to a third-party server.",
             defaultModel: "openai",
-            defaultBase: "https://text.pollinations.ai",
+            defaultBase: "/api/ai",
             keyHint: "",
             keyless: true,
             needsBase: true,
@@ -131,7 +159,38 @@
 
             build: function (cfg, system, messages, stream) {
                 var model = cfg.model || this.defaultModel;
-                var base = trimSlash(cfg.baseUrl || this.defaultBase);
+                var base = trimSlash(cfg.baseUrl || "");
+
+                /* A saved copy of the old public endpoint only breaks
+                   things now - it challenges browser requests - so free
+                   mode falls back to the built-in relay. A custom
+                   gateway is still honoured. */
+                if (!base || /pollinations\.ai/i.test(base)) {
+                    base = trimSlash(this.defaultBase);
+                }
+
+                /* the default base is a path on this app's own server -
+                   keep it when this page IS that server (works over LAN
+                   too), and aim at the server explicitly when the page
+                   runs anywhere else (another local port, file://). The
+                   API allows any origin, so the answer still arrives. */
+                if (base.charAt(0) === "/") {
+                    var here = global.location || {};
+                    var pagePort = String(here.port || "");
+                    var pageHost = String(here.hostname || "");
+
+                    if (pagePort === "3000" && here.origin &&
+                        /^https?:$/.test(String(here.protocol))) {
+                        base = String(here.origin).replace(/\/+$/, "") + base;
+                    } else {
+                        /* a static preview (VS Code Live Server, file://)
+                           still finds the relay on the same machine, and on
+                           a LAN preview on the same host at port 3000 */
+                        var relayHost = pageHost || "localhost";
+                        var relayProto = String(here.protocol) === "https:" ? "https:" : "http:";
+                        base = relayProto + "//" + relayHost + ":3000" + base;
+                    }
+                }
 
                 return {
                     model: model,
@@ -422,6 +481,36 @@
         var snippet = String(body || "").replace(/\s+/g, " ").slice(0, 160);
 
         return "Request failed (" + status + ")." + (snippet ? " " + snippet : "");
+    }
+
+    /* An unreachable endpoint rejects the fetch itself, which reaches the
+       page as a bare "Failed to fetch". Name the real cause instead: the
+       app's own relay only answers while the local server is running, so
+       that case gets the exact command to start it. A deliberate stop
+       (AbortError) is passed straight through. */
+    function networkError(error, provider, spec) {
+
+        if (error && error.name === "AbortError") { return error; }
+
+        var text = String((error && error.message) || error || "");
+
+        var looksNetwork = (error && error.name === "TypeError") ||
+            /failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(text);
+
+        if (!looksNetwork) { return error; }
+
+        if (/\/api\/ai\b/.test(String((spec && spec.url) || ""))) {
+            return new Error(
+                "The study assistant's local server is not answering. " +
+                "Start it with start-server.bat (or run: node server/server.js), " +
+                "keep that window open, then try again."
+            );
+        }
+
+        return new Error(
+            "Could not reach " + (provider && provider.label ? provider.label : "the provider") +
+            ". Check your internet connection and the endpoint saved in Settings."
+        );
     }
 
     /* Streams a response, calling onDelta for each new fragment.
@@ -728,12 +817,17 @@
                         model: spec.model
                     };
                 });
+            }).catch(function (error) {
+                throw networkError(error, provider, spec);
             });
         }
 
         return streamResponse(spec, provider, opts.onDelta, fetchFn)
             .then(function (text) {
                 return { text: text, provider: provider.id, model: spec.model };
+            })
+            .catch(function (error) {
+                throw networkError(error, provider, spec);
             });
     }
 

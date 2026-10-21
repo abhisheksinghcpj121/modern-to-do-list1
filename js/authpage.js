@@ -34,6 +34,36 @@
     }
 
 
+    /* ---------- helpers ---------- */
+
+    /* Disables a form while its request is in flight, so a slow server
+       never gets the same submission twice. */
+    function busy(form, on, label) {
+
+        var button = form.querySelector("button[type=submit]");
+
+        form.querySelectorAll("input, button").forEach(function (node) {
+            node.disabled = on;
+        });
+
+        if (button && on) {
+            button.dataset.label = button.textContent;
+            button.textContent = label || "Please wait…";
+        } else if (button && button.dataset.label) {
+            button.textContent = button.dataset.label;
+        }
+    }
+
+    /* Auth.signup / Auth.login resolve to {ok, error}; a redirect only
+       happens once the result is actually back. */
+    function finish(result, errorNode, onSuccess) {
+
+        if (result.ok) { onSuccess(); return; }
+
+        errorNode.textContent = result.error || "Something went wrong. Please try again.";
+    }
+
+
     /* ---------- login ---------- */
 
     function initLogin() {
@@ -50,22 +80,28 @@
 
             e.preventDefault();
             error.textContent = "";
+            busy(form, true, "Logging in…");
 
-            var result = Auth.login(
+            Auth.login(
                 doc.getElementById("email").value,
                 doc.getElementById("password").value
-            );
+            ).then(function (result) {
 
-            if (!result.ok) {
-                error.textContent = result.error;
-                return;
-            }
+                busy(form, false);
 
-            ui.toast("Welcome back! 🎓", "success");
+                finish(result, error, function () {
 
-            setTimeout(function () {
-                global.location.href = Auth.nextUrl();
-            }, 500);
+                    if (result.offline) {
+                        ui.toast("Signed in on this device only (server offline)", "warn");
+                    } else {
+                        ui.toast("Welcome back! 🎓", "success");
+                    }
+
+                    setTimeout(function () {
+                        global.location.href = Auth.nextUrl();
+                    }, 400);
+                });
+            });
         });
 
         var guestBtn = doc.getElementById("guestBtn");
@@ -118,24 +154,30 @@
 
             e.preventDefault();
             error.textContent = "";
+            busy(form, true, "Creating account…");
 
-            var result = Auth.signup({
+            Auth.signup({
                 name: doc.getElementById("name").value,
                 email: doc.getElementById("email").value,
                 password: pwInput.value,
                 confirm: doc.getElementById("confirm").value
+            }).then(function (result) {
+
+                busy(form, false);
+
+                finish(result, error, function () {
+
+                    if (result.offline) {
+                        ui.toast("Account created on this device (server offline)", "warn");
+                    } else {
+                        ui.toast("Account created 🎉", "success");
+                    }
+
+                    setTimeout(function () {
+                        global.location.href = "dashboard.html";
+                    }, 500);
+                });
             });
-
-            if (!result.ok) {
-                error.textContent = result.error;
-                return;
-            }
-
-            ui.toast("Account created 🎉", "success");
-
-            setTimeout(function () {
-                global.location.href = "dashboard.html";
-            }, 600);
         });
     }
 

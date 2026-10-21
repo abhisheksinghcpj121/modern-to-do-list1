@@ -86,6 +86,7 @@
 
         if (!session.guest) {
             Store.users.update(session.email, { name: value });
+            Store.api("PATCH", "/api/auth/me", { name: value }).catch(function () { /* offline */ });
         }
 
         ui.toast("Profile updated ✅", "success");
@@ -132,14 +133,29 @@
 
         var salt = Store.makeSalt();
 
-        Store.users.update(session.email, {
-            salt: salt,
-            hash: Store.hashPassword(next, salt)
+        /* With a server account the server has the final say, so the new
+           password also works on other devices. Offline, only the local
+           copy changes. */
+        var apply = Store.sync.isSyncedAccount()
+            ? Store.api("PATCH", "/api/auth/me", {
+                password: { current: current, next: next }
+            })
+            : Promise.resolve(null);
+
+        apply.then(function () {
+
+            Store.users.update(session.email, {
+                salt: salt,
+                hash: Store.hashPassword(next, salt)
+            });
+
+            event.target.reset();
+
+            ui.toast("Password changed successfully 🔒", "success");
+
+        }).catch(function (err) {
+            ui.toast((err && err.message) || "Could not change the password", "error");
         });
-
-        event.target.reset();
-
-        ui.toast("Password changed successfully 🔒", "success");
     }
 
 
@@ -223,6 +239,8 @@
                 var session = Store.session.get();
                 if (session && !session.guest) {
                     Store.users.update(session.email, { theme: r.dataset.themeOption });
+                    Store.api("PATCH", "/api/auth/me", { theme: r.dataset.themeOption })
+                        .catch(function () { /* offline */ });
                 }
 
                 ui.theme.syncButton();
@@ -293,14 +311,14 @@
 
         ui.confirmBox({
             title: "Erase all data?",
-            message: "Every task, note, goal, session and plan on this device will be deleted. This cannot be undone.",
+            message: "Every task, note, goal, session and plan will be deleted - from this device and from your account on the server. This cannot be undone.",
             confirmText: "Erase everything",
             danger: true
         }).then(function (ok) {
 
             if (!ok) { return; }
 
-            Store.wipe();
+            Store.wipe();   /* device + server copy */
 
             ui.toast("All data erased", "info");
 

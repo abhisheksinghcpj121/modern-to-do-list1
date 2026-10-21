@@ -1,0 +1,3 @@
+# dependencies: none, but keep these out of version control
+server/data/
+node_modules/
