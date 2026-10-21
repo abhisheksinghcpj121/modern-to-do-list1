@@ -66,9 +66,9 @@
 
         var baseUrl = String(saved.baseUrl || "");
 
-        /* The old public endpoint blocks browser requests, so a saved
-           copy of it is dropped - every provider falls back to its own
-           default address instead of a dead one. */
+        /* A saved copy of the public free endpoint is dropped - the free
+           provider knows that address already and reaches it the right
+           way for wherever the page is being served from. */
         if (/pollinations\.ai/i.test(baseUrl)) {
             baseUrl = "";
         }
@@ -157,80 +157,130 @@
            the student's notes) is handled by a third party. That trade-off
            is spelled out in the UI.
 
-           The public endpoint now challenges requests that carry a browser
-           Origin with an anti-bot token, so the page cannot reach it
-           directly. The default base below points at this app's own server,
-           which forwards the call on the page's behalf (see server/api.js).
-           A custom base still works for anyone running their own relay. */
+           The public endpoint answers a streamed request from anywhere -
+           a hosted copy, a phone, a static preview - but it holds plain
+           requests to one reply every 30 seconds per IP, and it turns
+           some browser origins away with an anti-bot check. Two things
+           follow from that, and both are handled in build() below:
+           the wire always carries a stream, and the app's own server
+           (see server/api.js) is asked to make the call whenever the
+           page is running next to one. A custom base still works for
+           anyone running their own gateway. */
         free: {
             id: "free",
             label: "Free (no key)",
             blurb: "Works instantly with no key. Public and rate-limited — your notes go to a third-party server.",
             defaultModel: "openai",
-            defaultBase: "/api/ai",
+            defaultBase: "https://text.pollinations.ai",
+            relayBase: "/api/ai",
             keyHint: "",
             keyless: true,
             needsBase: true,
             models: ["openai", "openai-fast"],
 
             build: function (cfg, system, messages, stream) {
+
                 var model = cfg.model || this.defaultModel;
-                var base = trimSlash(cfg.baseUrl || "");
 
-                /* A saved copy of the old public endpoint only breaks
-                   things now - it challenges browser requests - so free
-                   mode falls back to the built-in relay. A custom
-                   gateway is still honoured. */
-                if (!base || /pollinations\.ai/i.test(base)) {
-                    base = trimSlash(this.defaultBase);
+                /* a saved base is honoured as it is - that is how someone
+                   points the app at their own gateway */
+                var saved = trimSlash(cfg.baseUrl || "");
+
+                function body(wireStream) {
+                    return JSON.stringify({
+                        model: model,
+                        stream: wireStream,
+                        temperature: 0.3,
+                        messages: [{ role: "system", content: system }].concat(messages)
+                    });
                 }
 
-                /* the default base is a path on this app's own server -
-                   keep it when this page IS that server (works over LAN
-                   too), and aim at the server explicitly when the page
-                   runs anywhere else (another local port, file://). The
-                   API allows any origin, so the answer still arrives. */
-                if (base.charAt(0) === "/") {
-                    var here = global.location || {};
-                    var pagePort = String(here.port || "");
-                    var pageHost = String(here.hostname || "");
-                    var pageProto = String(here.protocol || "");
-
-                    if (pagePort === "3000" && here.origin &&
-                        /^https?:$/.test(pageProto)) {
-                        base = String(here.origin).replace(/\/+$/, "") + base;
-                    } else if (isLocalHost(pageHost) || pageProto === "file:") {
-                        /* a static preview (VS Code Live Server, file://)
-                           still finds the relay on the same machine, and on
-                           a LAN preview on the same host at port 3000 */
-                        var relayHost = pageHost || "localhost";
-                        var relayProto = pageProto === "https:" ? "https:" : "http:";
-                        base = relayProto + "//" + relayHost + ":3000" + base;
-                    } else {
-                        /* A real deployment (GitHub Pages, any public host)
-                           has no relay behind it - the static host only
-                           serves files and answers POST with 405. Leave the
-                           base null so ask() refuses before any request is
-                           made, with a message that explains why. */
-                        base = null;
-                    }
+                function headers() {
+                    /* note: no /v1 prefix and no Authorization header */
+                    return { "Content-Type": "application/json" };
                 }
 
+                if (saved && saved.charAt(0) !== "/" && !/pollinations\.ai/i.test(saved)) {
+                    /* someone's own gateway - it is asked for exactly what
+                       was requested, streaming or not */
+                    return {
+                        model: model,
+                        url: saved + "/openai",
+                        init: { method: "POST", headers: headers(), body: body(stream) },
+                        fallback: null
+                    };
+                }
+
+                /* The free endpoint answers a streamed request every time,
+                   but holds plain (non-streamed) requests to one reply
+                   every 30 seconds per IP - which is what the quiz and the
+                   other one-shot helpers would otherwise keep hitting. So
+                   the wire always carries a stream and the answer is put
+                   back together here. */
+                var init = { method: "POST", headers: headers(), body: body(true) };
+
+                /* the public address, called straight from the page - this
+                   works from anywhere: a hosted copy, a phone, a preview */
+                var direct = trimSlash(this.defaultBase);
+
+                /* this app's own server, but only when there is one next to
+                   the page. It is tried first: a server-side call carries
+                   no browser Origin, and the public endpoint turns some
+                   browser origins away. */
+                var relay = saved && saved.charAt(0) === "/"
+                    ? this.resolvePath(saved)
+                    : this.relayUrl();
+
+                if (relay) {
+                    return {
+                        model: model,
+                        url: relay + "/openai",
+                        init: init,
+                        wireStream: true,
+                        fallback: { url: direct + "/openai", init: init, wireStream: true }
+                    };
+                }
+
+                /* no server of ours to help - the public address is the
+                   only route, and it is a good one */
                 return {
                     model: model,
-                    /* note: no /v1 prefix and no Authorization header */
-                    url: base ? base + "/openai" : "",
-                    init: {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            model: model,
-                            stream: stream,
-                            temperature: 0.3,
-                            messages: [{ role: "system", content: system }].concat(messages)
-                        })
-                    }
+                    url: direct + "/openai",
+                    init: init,
+                    wireStream: true,
+                    fallback: null
                 };
+            },
+
+            /* Turns a path on this app's own server into a full address:
+               the page's own origin when it IS that server, the same host
+               on port 3000 for a local preview, nothing on a hosted copy. */
+            resolvePath: function (path) {
+
+                var here = global.location || {};
+                var pagePort = String(here.port || "");
+                var pageHost = String(here.hostname || "");
+                var pageProto = String(here.protocol || "");
+
+                if (pagePort === "3000" && here.origin &&
+                    /^https?:$/.test(pageProto)) {
+                    return String(here.origin).replace(/\/+$/, "") + path;
+                }
+
+                if (isLocalHost(pageHost) || pageProto === "file:") {
+                    var relayHost = pageHost || "localhost";
+                    var relayProto = pageProto === "https:" ? "https:" : "http:";
+                    return relayProto + "//" + relayHost + ":3000" + path;
+                }
+
+                return "";
+            },
+
+            /* The relay lives on the machine (or LAN) that serves the page.
+               A hosted copy has no such server, and then the public address
+               above is used on its own. */
+            relayUrl: function () {
+                return this.resolvePath(this.relayBase);
             },
 
             /* The upstream replies with the OpenAI chunk shape. It also
@@ -493,6 +543,16 @@
         var msg = provider.error(json);
 
         if (msg) {
+            /* the free service says these two things in its own words -
+               they are easier to act on when they are plain English */
+            if (/free[_ ]limit/i.test(msg)) {
+                return "The free AI service allows one reply every 30 seconds. " +
+                    "Wait a moment, then try again.";
+            }
+            if (/turnstile/i.test(msg)) {
+                return "The free AI service asked for a browser check on that request. " +
+                    "Try again in a moment.";
+            }
             return "Provider said: " + msg;
         }
         if (status === 401 || status === 403) {
@@ -507,6 +567,33 @@
         return "Request failed (" + status + ")." + (snippet ? " " + snippet : "");
     }
 
+    /* A request that never reached the server: the browser refused it, the
+       network was down, or the host was unreachable. A provider that
+       answered with a status code is a different thing and is not retried. */
+    function isNetworkError(error) {
+
+        if (!error) { return false; }
+
+        var text = String((error && error.message) || error || "");
+
+        return (error.name === "TypeError") ||
+            /failed to fetch|fetch failed|networkerror|load failed|network request failed|connection refused/i.test(text);
+    }
+
+    /* The free endpoint turns some requests away: an anti-bot challenge
+       for browser origins it does not trust, and a one-reply-per-30s
+       limit for plain requests. Both are worth trying the other route
+       for - they are not the student's fault and they are not a wrong
+       answer. */
+    function isBlockedError(error) {
+
+        if (!error) { return false; }
+
+        var text = String((error && error.message) || error || "");
+
+        return /turnstile|free[_ ]limit|captcha|challenge|rate limited|too many requests/i.test(text);
+    }
+
     /* An unreachable endpoint rejects the fetch itself, which reaches the
        page as a bare "Failed to fetch". Name the real cause instead: the
        app's own relay only answers while the local server is running, so
@@ -516,12 +603,7 @@
 
         if (error && error.name === "AbortError") { return error; }
 
-        var text = String((error && error.message) || error || "");
-
-        var looksNetwork = (error && error.name === "TypeError") ||
-            /failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(text);
-
-        if (!looksNetwork) { return error; }
+        if (!isNetworkError(error)) { return error; }
 
         if (/\/api\/ai\b/.test(String((spec && spec.url) || ""))) {
             return new Error(
@@ -533,7 +615,7 @@
 
         return new Error(
             "Could not reach " + (provider && provider.label ? provider.label : "the provider") +
-            ". Check your internet connection and the endpoint saved in Settings."
+            ". Check your internet connection, then try again."
         );
     }
 
@@ -819,48 +901,56 @@
         var stream = opts.stream !== false;
         var spec = provider.build(cfg, system, messages, stream);
 
-        /* The keyless relay is a helper on the app's own server. On a hosted
-           copy (GitHub Pages) there is none, and the static host rejects the
-           POST with 405. Say that plainly instead of borrowing its error. */
-        if (!spec.url) {
-            return Promise.reject(new Error(
-                "AI answers need the assistant's local server, which a hosted copy " +
-                "of this site does not have. Run the app on your own machine " +
-                "(start-server.bat, then open http://localhost:3000) to use the assistant. " +
-                "Everything else on this page - your notes, flashcards and summaries - works here."
-            ));
-        }
-
         if (opts.signal) {
             spec.init.signal = opts.signal;
         }
 
-        if (!stream) {
-            return fetchFn(spec.url, spec.init).then(function (res) {
-                return res.text().then(function (body) {
-                    var json = safeJSON(body);
+        /* One attempt against a given address. Some providers always
+           answer on a stream - the free one does - so the wire decides,
+           not the caller. */
+        function attempt(sp) {
 
-                    if (!res.ok) {
-                        throw new Error(httpError(provider, res.status, json, body));
-                    }
+            var onWire = stream || sp.wireStream;
 
-                    var err = provider.error(json);
-                    if (err) { throw new Error("Provider said: " + err); }
+            if (!onWire) {
+                return fetchFn(sp.url, sp.init).then(function (res) {
+                    return res.text().then(function (body) {
+                        var json = safeJSON(body);
 
-                    return {
-                        text: provider.full(json),
-                        provider: provider.id,
-                        model: spec.model
-                    };
+                        if (!res.ok) {
+                            throw new Error(httpError(provider, res.status, json, body));
+                        }
+
+                        var err = provider.error(json);
+                        if (err) { throw new Error("Provider said: " + err); }
+
+                        return {
+                            text: provider.full(json),
+                            provider: provider.id,
+                            model: spec.model
+                        };
+                    });
                 });
-            }).catch(function (error) {
-                throw networkError(error, provider, spec);
-            });
+            }
+
+            return streamResponse(sp, provider, opts.onDelta, fetchFn)
+                .then(function (text) {
+                    return { text: text, provider: provider.id, model: spec.model };
+                });
         }
 
-        return streamResponse(spec, provider, opts.onDelta, fetchFn)
-            .then(function (text) {
-                return { text: text, provider: provider.id, model: spec.model };
+        /* One route is tried, and if it is out of reach the other one is
+           asked instead - so a student never sees a dead end just because
+           one address happens to be unavailable. */
+        return attempt(spec)
+            .catch(function (error) {
+                var backup = spec.fallback;
+
+                if (!backup || !(isNetworkError(error) || isBlockedError(error))) {
+                    throw error;
+                }
+
+                return attempt(backup);
             })
             .catch(function (error) {
                 throw networkError(error, provider, spec);
